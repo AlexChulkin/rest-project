@@ -2,6 +2,10 @@ package com.example.domain;
 
 
 import com.example.handler.DateTimeFieldHandler;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -9,6 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,10 +23,10 @@ import java.time.Instant;
  */
 @NamedQueries({
         @NamedQuery(name = "Product.findProductsByName",
-                query = "SELECT NEW com.example.domain.TimestampAndPrice(p.timestamp, p.price) " +
+                query = "SELECT NEW com.example.domain.Product(p, 'WOUT_NAME') " +
                         "FROM Product p WHERE p.name = :name"),
         @NamedQuery(name = "Product.findProductsByTimestamp",
-                query = "SELECT NEW com.example.domain.NameAndPrice(p.name, p.price) " +
+                query = "SELECT NEW com.example.domain.Product(p, 'WOUT_TIMESTAMP') " +
                         "FROM Product p WHERE p.timestamp = :timestamp"),
 })
 @Entity
@@ -29,11 +34,25 @@ import java.time.Instant;
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    transient EntityCompleteness entityCompleteness = EntityCompleteness.COMPLETE;
+
     private String name;
+    @JsonSerialize(using = OmitTimeStampSerializer.class, as = Instant.class)
     private Instant timestamp;
+    @JsonSerialize(using = OmitNameSerializer.class, as = BigDecimal.class)
     private BigDecimal price;
     private int version;
     private Long id;
+
+    public Product() {
+    }
+
+    public Product(Product p, String entityCompleteness) {
+        setPrice(p.getPrice());
+        setTimestamp(p.getTimestamp());
+        setName(p.getName());
+        setEntityCompleteness(EntityCompleteness.valueOf(entityCompleteness));
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -85,9 +104,48 @@ public class Product implements Serializable {
         this.version = version;
     }
 
+    public EntityCompleteness getEntityCompleteness() {
+        return entityCompleteness;
+    }
+
+    public void setEntityCompleteness(EntityCompleteness entityCompleteness) {
+        this.entityCompleteness = entityCompleteness;
+    }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.SIMPLE_STYLE);
+    }
+
+    public class OmitNameSerializer extends JsonSerializer<String> {
+        public OmitNameSerializer() {
+        }
+
+        @Override
+        public void serialize(String name,
+                              JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider)
+                throws IOException {
+            if (getEntityCompleteness() != EntityCompleteness.WOUT_NAME) {
+                jsonGenerator.writeObject(name);
+            }
+        }
+    }
+
+    public class OmitTimeStampSerializer extends JsonSerializer<Instant> {
+
+        public OmitTimeStampSerializer() {
+        }
+
+        @Override
+        public void serialize(Instant timestamp,
+                              JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider)
+                throws IOException {
+            if (getEntityCompleteness() != EntityCompleteness.WOUT_TIMESTAMP) {
+                jsonGenerator.writeObject(timestamp);
+            }
+        }
     }
 }
 

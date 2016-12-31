@@ -1,8 +1,6 @@
 package com.example.controller;
 
-import com.example.domain.NameAndPrice;
 import com.example.domain.Product;
-import com.example.domain.TimestampAndPrice;
 import com.example.handler.ControllerValidationHandler;
 import com.example.handler.DateTimeFieldHandler;
 import com.example.service.ProductService;
@@ -38,23 +36,25 @@ public class ProductController extends ControllerValidationHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET)
+    @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET,
+            produces = {"application/json", "application/xml"})
     @ResponseBody
-    public List<TimestampAndPrice> findProductsByName(@Size(min = 1, max = 60) @PathVariable("pn") String name) {
+    public List<Product> findProductsByName(@Size(min = 1, max = 60) @PathVariable("pn") String name) {
         logger.info("Finding products with product name: " + name);
-        List<TimestampAndPrice> result = productService.findProductsByName(name);
+        List<Product> result = productService.findProductsByName(name);
 
         logger.info("Successfully found products with product name: " + name);
         return result;
     }
 
-    @RequestMapping(value = "/ts/{ts}", method = RequestMethod.GET)
+    @RequestMapping(value = "/ts/{ts}", method = RequestMethod.GET,
+            produces = {"application/json", "application/xml"})
     @ResponseBody
-    public List<NameAndPrice> findProductsByTimestamp(
+    public List<Product> findProductsByTimestamp(
             @NotNull @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern) @PathVariable("ts") String timestampString) {
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
         logger.info("Finding products with timestamp: " + timestampString);
-        List<NameAndPrice> result = productService.findProductsByTimestamp(timestamp);
+        List<Product> result = productService.findProductsByTimestamp(timestamp);
         logger.info("Successfully found products with timestamp: " + timestampString);
         return result;
     }

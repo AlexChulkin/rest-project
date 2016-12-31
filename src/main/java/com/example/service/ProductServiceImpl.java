@@ -1,8 +1,6 @@
 package com.example.service;
 
-import com.example.domain.NameAndPrice;
 import com.example.domain.Product;
-import com.example.domain.TimestampAndPrice;
 import com.example.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -32,15 +30,15 @@ public class ProductServiceImpl implements ProductService {
     private EntityManager em;
 
     @Override
-    public List<TimestampAndPrice> findProductsByName(String name) {
-        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByName", TimestampAndPrice.class)
+    public List<Product> findProductsByName(String name) {
+        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByName", Product.class)
                 .setParameter("name", name)
                 .getResultList());
     }
 
     @Override
-    public List<NameAndPrice> findProductsByTimestamp(Instant timestamp) {
-        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
+    public List<Product> findProductsByTimestamp(Instant timestamp) {
+        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByTimestamp", Product.class)
                 .setParameter("timestamp", dateTimeFormatter.format(timestamp))
                 .getResultList());
     }
