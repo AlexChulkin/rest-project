@@ -7,8 +7,6 @@ import com.example.handler.ControllerValidationHandler;
 import com.example.handler.DateTimeFieldHandler;
 import com.example.service.ProductService;
 import lombok.extern.log4j.Log4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,7 +28,6 @@ import java.util.List;
 @Validated
 @Log4j
 public class ProductController extends ControllerValidationHandler {
-    private final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
     private ProductService productService;
@@ -42,10 +39,10 @@ public class ProductController extends ControllerValidationHandler {
             produces = {"application/json", "application/xml"})
     @ResponseBody
     public List<TimestampAndPrice> findProductsByName(@Size(min = 1, max = 60) @PathVariable("pn") String name) {
-        logger.info("Finding products with product name: " + name);
+        log.info("Finding products with product name: " + name);
         List<TimestampAndPrice> result = productService.findProductsByName(name);
 
-        logger.info("Successfully found products with product name: " + name);
+        log.info("Successfully found products with product name: " + name);
         return result;
     }
 
@@ -56,9 +53,9 @@ public class ProductController extends ControllerValidationHandler {
     public List<NameAndPrice> findProductsByTimestamp(
             @NotNull @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern) @PathVariable("ts") String timestampString) {
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
-        logger.info("Finding products with timestamp: " + timestampString);
+        log.info("Finding products with timestamp: " + timestampString);
         List<NameAndPrice> result = productService.findProductsByTimestamp(timestamp);
-        logger.info("Successfully found products with timestamp: " + timestampString);
+        log.info("Successfully found products with timestamp: " + timestampString);
         return result;
     }
 
@@ -67,9 +64,9 @@ public class ProductController extends ControllerValidationHandler {
             consumes = {"application/json", "application/xml"})
     @ResponseBody
     public Product create(@Valid @RequestBody Product product) {
-        logger.info("Creating product: " + product);
+        log.info("Creating product: " + product);
         productService.saveProduct(product);
-        logger.info("Successfully created product: " + product);
+        log.info("Successfully created product: " + product);
         return product;
     }
 
@@ -80,19 +77,19 @@ public class ProductController extends ControllerValidationHandler {
                        @NotNull @PathVariable("id") Long id) {
         checkIfIdExists(id);
         checkIdAndEntityForConsistency(id, product);
-        logger.info("Updating product: " + product);
+        log.info("Updating product: " + product);
         productService.saveProduct(product);
-        logger.info("Product updated successfully with info: " + product);
+        log.info("Product updated successfully with info: " + product);
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     @ResponseBody
     public void delete(@NotNull @PathVariable("id") Long id) {
         checkIfIdExists(id);
-        logger.info("Deleting product with id: " + id);
+        log.info("Deleting product with id: " + id);
         Product product = productService.findProductById(id);
         productService.deleteProduct(product);
-        logger.info("Product deleted successfully");
+        log.info("Product deleted successfully");
     }
 
     @Override

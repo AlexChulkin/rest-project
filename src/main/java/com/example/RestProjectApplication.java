@@ -1,12 +1,67 @@
 package com.example;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
+import org.springframework.oxm.castor.CastorMarshaller;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Arrays;
 
 @SpringBootApplication
 public class RestProjectApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(RestProjectApplication.class, args);
+    }
+
+
+    /**
+     * Enable @Valid validation exception handler for @PathVariable, @RequestParam and @RequestHeader.
+     */
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor() {
+        return new MethodValidationPostProcessor();
+    }
+
+    @Bean
+    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
+        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        jsonConverter.setObjectMapper(objectMapper);
+        return jsonConverter;
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setMessageConverters(Arrays.asList(marshallingHttpMessageConverter(),
+                mappingJackson2HttpMessageConverter()));
+        return restTemplate;
+    }
+
+    @Bean
+    public MarshallingHttpMessageConverter marshallingHttpMessageConverter() {
+        MarshallingHttpMessageConverter marshallingHttpMessageConverter = new MarshallingHttpMessageConverter();
+        marshallingHttpMessageConverter.setMarshaller(castorMarshaller());
+        marshallingHttpMessageConverter.setUnmarshaller(castorMarshaller());
+        marshallingHttpMessageConverter.setSupportedMediaTypes(Arrays.asList(MediaType.APPLICATION_JSON));
+        return marshallingHttpMessageConverter;
+    }
+
+    @Bean
+    public CastorMarshaller castorMarshaller() {
+        CastorMarshaller castorMarshaller = new CastorMarshaller();
+        castorMarshaller.setMappingLocation(new ClassPathResource("static/oxm-mapping.xml"));
+        return castorMarshaller;
     }
 }
