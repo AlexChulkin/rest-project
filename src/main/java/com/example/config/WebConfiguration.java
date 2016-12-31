@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.castor.CastorMarshaller;
@@ -12,8 +14,9 @@ import org.springframework.validation.beanvalidation.MethodValidationPostProcess
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by alexc_000 on 2016-12-31.
@@ -43,21 +46,23 @@ public class WebConfiguration extends WebMvcConfigurerAdapter {
         MarshallingHttpMessageConverter marshallingHttpMessageConverter = new MarshallingHttpMessageConverter();
         marshallingHttpMessageConverter.setMarshaller(castorMarshaller());
         marshallingHttpMessageConverter.setUnmarshaller(castorMarshaller());
+        marshallingHttpMessageConverter.setSupportedMediaTypes(Arrays.asList(MediaType.APPLICATION_XML));
         return marshallingHttpMessageConverter;
     }
 
     @Bean
     public CastorMarshaller castorMarshaller() {
         CastorMarshaller castorMarshaller = new CastorMarshaller();
-        castorMarshaller.setMappingLocation(new FileSystemResource(new File("classpath:static/oxm-mapping.xml")));
+        castorMarshaller.setMappingLocation(new ClassPathResource("static/oxm-mapping.xml"));
         return castorMarshaller;
     }
 
     @Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setMessageConverters(new ArrayList<>());
-        restTemplate.getMessageConverters().add(marshallingHttpMessageConverter());
+        List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
+        messageConverters.add(marshallingHttpMessageConverter());
+        restTemplate.setMessageConverters(messageConverters);
         return restTemplate;
     }
 
