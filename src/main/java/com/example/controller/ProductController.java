@@ -3,9 +3,9 @@ package com.example.controller;
 import com.example.domain.NameAndPrice;
 import com.example.domain.Product;
 import com.example.domain.TimestampAndPrice;
-import com.example.handler.ControllerValidationHandler;
-import com.example.handler.DateTimeFieldHandler;
+import com.example.serialization.xml.DateTimeFieldHandler;
 import com.example.service.ProductService;
+import com.example.validation.ControllerValidationHandler;
 import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -19,6 +19,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
+
+import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -51,7 +53,7 @@ public class ProductController extends ControllerValidationHandler {
 
     @ResponseBody
     public List<NameAndPrice> findProductsByTimestamp(
-            @NotNull @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern) @PathVariable("ts") String timestampString) {
+            @NotNull @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN) @PathVariable("ts") String timestampString) {
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
         log.info("Finding products with timestamp: " + timestampString);
         List<NameAndPrice> result = productService.findProductsByTimestamp(timestamp);

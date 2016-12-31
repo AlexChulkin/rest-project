@@ -1,10 +1,14 @@
 package com.example;
 
+import com.example.serialization.json.InstantDeserializer;
+import com.example.serialization.json.InstantSerializer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -13,10 +17,25 @@ import org.springframework.oxm.castor.CastorMarshaller;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Locale;
 
 @SpringBootApplication
 public class RestProjectApplication {
+    public static final String DATE_TIME_FORMAT_PATTERN = "yyyy-MM-dd hh:mm:ss";
+    public static final DateTimeFormatter DATE_TIME_FORMATTER;
+    public static final Locale DEFAULT_LOCALE = Locale.getDefault();
+    public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+
+    static {
+        DATE_TIME_FORMATTER = DateTimeFormatter
+                .ofPattern(DATE_TIME_FORMAT_PATTERN)
+                .withLocale(DEFAULT_LOCALE)
+                .withZone(DEFAULT_ZONE_ID);
+    }
 
     public static void main(String[] args) {
 
@@ -25,7 +44,7 @@ public class RestProjectApplication {
 
 
     /**
-     * Enable @Valid validation exception handler for @PathVariable, @RequestParam and @RequestHeader.
+     * Enable @Valid validation exception validation for @PathVariable, @RequestParam and @RequestHeader.
      */
     @Bean
     public MethodValidationPostProcessor methodValidationPostProcessor() {
@@ -35,10 +54,21 @@ public class RestProjectApplication {
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        jsonConverter.setObjectMapper(objectMapper);
+
+        jsonConverter.setObjectMapper(serializingObjectMapper());
         return jsonConverter;
+    }
+
+    @Bean
+    @Primary
+    public ObjectMapper serializingObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(Instant.class, new InstantSerializer());
+        javaTimeModule.addDeserializer(Instant.class, new InstantDeserializer());
+        objectMapper.registerModule(javaTimeModule);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return objectMapper;
     }
 
     @Bean

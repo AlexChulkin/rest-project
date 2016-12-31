@@ -1,7 +1,7 @@
 package com.example.domain;
 
 
-import com.example.handler.DateTimeFieldHandler;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -12,6 +12,8 @@ import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+
+import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -30,6 +32,7 @@ public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String name;
+    @JsonFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     private Instant timestamp;
     private BigDecimal price;
     private int version;
@@ -58,7 +61,7 @@ public class Product implements Serializable {
     }
 
     @NotNull(message = "error.timestamp.notNull")
-    @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern)
+    @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     public Instant getTimestamp() {
         return timestamp;
     }

@@ -24,7 +24,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProductServiceImpl implements ProductService {
     private static final String INSTANT_TIMESTAMP_FORMAT = "yyyy-MM-dd hh:mm:ss";
-    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(INSTANT_TIMESTAMP_FORMAT);
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(INSTANT_TIMESTAMP_FORMAT);
 
     @Autowired
     private ProductRepository productRepository;
@@ -41,7 +41,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<NameAndPrice> findProductsByTimestamp(Instant timestamp) {
         return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
-                .setParameter("timestamp", dateTimeFormatter.format(timestamp))
+                .setParameter("timestamp", DATE_TIME_FORMATTER.format(timestamp))
                 .getResultList());
     }
 

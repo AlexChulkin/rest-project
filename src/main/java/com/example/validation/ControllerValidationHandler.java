@@ -1,4 +1,4 @@
-package com.example.handler;
+package com.example.validation;
 
 import com.example.domain.Product;
 import com.example.service.ProductService;
@@ -37,7 +37,7 @@ public abstract class ControllerValidationHandler<T> {
     private MessageSource messageSource;
 
     /**
-     * Exception handler for the cases when @Valid-annotated parameters fail validation process.
+     * Exception validation for the cases when @Valid-annotated parameters fail validation process.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -49,7 +49,7 @@ public abstract class ControllerValidationHandler<T> {
     }
 
     /**
-     * Exception handler for the cases when binding errors are considered fatal.
+     * Exception validation for the cases when binding errors are considered fatal.
      *
      * @param exception
      * @return
@@ -74,12 +74,12 @@ public abstract class ControllerValidationHandler<T> {
     public
     @ResponseBody
     ValidationErrorDTO handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request, HttpServletResponse response) {
-        log.info("ResourceNotFoundException handler: " + ex.getMessage());
+        log.info("ResourceNotFoundException validation: " + ex.getMessage());
         return new ValidationErrorDTO((new ErrorMessageDTO(ErrorMessageType.ERROR, ex.getMessage())));
     }
 
     /**
-     * Exception handler for missing required parameters errors.
+     * Exception validation for missing required parameters errors.
      */
     @ExceptionHandler
     protected ResponseEntity<?> handleServletRequestBindingException(ServletRequestBindingException ex) {
@@ -87,7 +87,7 @@ public abstract class ControllerValidationHandler<T> {
     }
 
     /**
-     * Exception handler for invalid payload (e.g. json invalid format error).
+     * Exception validation for invalid payload (e.g. json invalid format error).
      */
     @ExceptionHandler
     protected ResponseEntity<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
@@ -102,7 +102,7 @@ public abstract class ControllerValidationHandler<T> {
     public
     @ResponseBody
     ResponseEntity<?> handleInconsistentEntityAndIdException(InconsistentEntityAndIdException ex, WebRequest request, HttpServletResponse response) {
-        log.info("InconsistentEntityAndIdException handler:" + ex.getMessage());
+        log.info("InconsistentEntityAndIdException validation:" + ex.getMessage());
         return ResponseEntity
                 .badRequest()
                 .body(new ValidationErrorDTO((new ErrorMessageDTO(ErrorMessageType.ERROR, ex.getMessage()))));

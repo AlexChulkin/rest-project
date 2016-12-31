@@ -34,7 +34,7 @@
     </class>
 
 
-    <field-handler name="dateHandler" class="com.example.handler.DateTimeFieldHandler">
+    <field-handler name="dateHandler" class="com.example.serialization.xml.DateTimeFieldHandler">
         <param name="date-time-format" value="yyyy-MM-dd hh:mm:ss"/>
     </field-handler>
 </mapping>
