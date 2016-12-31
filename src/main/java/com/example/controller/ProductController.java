@@ -6,7 +6,6 @@ import com.example.handler.ControllerValidationHandler;
 import com.example.handler.DateTimeFieldHandler;
 import com.example.service.ProductService;
 import lombok.extern.log4j.Log4j;
-import org.hibernate.validator.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.Instant;
 
 /**
@@ -38,7 +38,7 @@ public class ProductController extends ControllerValidationHandler {
 
     @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET)
     @ResponseBody
-    public Products findProductsByProductName(@NotBlank @PathVariable("pn") String productName) {
+    public Products findProductsByProductName(@Size(min = 1, max = 60) @PathVariable("pn") String productName) {
         logger.info("Finding products with product name: " + productName);
         Products result = new Products().setTimestampAndPriceList(productService.findProductsByProductName(productName));
         logger.info("Successfully found products with product name: " + productName);

@@ -25,7 +25,7 @@ import java.time.Instant;
                         "FROM Product p WHERE p.timestamp = :timestamp"),
 })
 @Entity
-@Table(name = "product", uniqueConstraints = @UniqueConstraint(columnNames = {"\"Product name\"", "\"Timestamp\""}))
+@Table(name = "product", uniqueConstraints = @UniqueConstraint(columnNames = {"name", "timestamp"}))
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -33,22 +33,22 @@ public class Product implements Serializable {
     private Instant timestamp;
     private BigDecimal price;
     private int version;
-    private long id;
+    private Long id;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "\"Id\"", length = 11)
-    public long getId() {
+    @Column(name = "id", length = 11)
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
     @NotNull(message = "error.productName.notNull")
     @Size(min = 1, max = 60, message = "error.productName.size")
-    @Column(name = "\"Product name\"")
+    @Column(name = "name")
     public String getProductName() {
         return productName;
     }
@@ -58,7 +58,6 @@ public class Product implements Serializable {
     }
 
     @NotNull(message = "error.timestamp.notNull")
-    @Column(name = "\"Timestamp\"")
     @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern)
     public Instant getTimestamp() {
         return timestamp;
@@ -69,7 +68,6 @@ public class Product implements Serializable {
     }
 
     @NotNull(message = "error.price.notNull")
-    @Column(name = "\"Price\"")
     public BigDecimal getPrice() {
         return price;
     }
@@ -79,7 +77,6 @@ public class Product implements Serializable {
     }
 
     @Version
-    @Column(name = "\"Version\"")
     public int getVersion() {
         return version;
     }
