@@ -1,0 +1,35 @@
+<mapping>
+    <class name="com.example.domain.Products">
+        <field name="nameAndPriceList" type="com.example.domain.NameAndPrice" collection="arraylist">
+            <bind-xml name="nameAndPrice"/>
+        </field>
+        <field name="timestampAndPriceList" type="com.example.domain.TimestampAndPrice" collection="arraylist">
+            <bind-xml name="timestampAndPrice"/>
+        </field>
+    </class>
+
+    <class name="com.example.domain.NameAndPrice">
+        <map-to xml="nameAndPrice"/>
+        <field name="name" type="string">
+            <bind-xml name="productName" node="element"/>
+        </field>
+        <field name="price" type="java.math.BigDecimal">
+            <bind-xml name="price" node="element"/>
+        </field>
+    </class>
+
+    <class name="com.example.domain.TimestampAndPrice">
+        <map-to xml="timestampAndPrice"/>
+        <field name="timestamp" type="string" handler="dateHandler">
+            <bind-xml name="timestamp" node="element"/>
+        </field>
+        <field name="price" type="java.math.BigDecimal">
+            <bind-xml name="price" node="element"/>
+        </field>
+    </class>
+
+
+    <field-handler name="dateHandler" class="com.example.handler.DateTimeFieldHandler">
+        <param name="date-time-format" value="yyyy-MM-dd hh:mm:ss"/>
+    </field-handler>
+</mapping>
