@@ -41,7 +41,8 @@ public class WebConfiguration extends WebMvcConfigurerAdapter {
     @Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setMessageConverters(Arrays.asList(marshallingHttpMessageConverter()));
+        restTemplate.setMessageConverters(Arrays.asList(marshallingHttpMessageConverter(),
+                mappingJackson2HttpMessageConverter()));
         return restTemplate;
     }
 

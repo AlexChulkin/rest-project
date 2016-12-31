@@ -32,9 +32,9 @@ public class ProductServiceImpl implements ProductService {
     private EntityManager em;
 
     @Override
-    public List<TimestampAndPrice> findProductsByProductName(String productName) {
-        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByProductName", TimestampAndPrice.class)
-                .setParameter("productName", productName)
+    public List<TimestampAndPrice> findProductsByName(String name) {
+        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByName", TimestampAndPrice.class)
+                .setParameter("name", name)
                 .getResultList());
     }
 

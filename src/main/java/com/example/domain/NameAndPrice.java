@@ -30,7 +30,7 @@ public final class NameAndPrice {
     }
 
     public boolean equalsToProduct(Product product) {
-        return StringUtils.equalsIgnoreCase(this.getName(), product.getProductName())
+        return StringUtils.equalsIgnoreCase(this.getName(), product.getName())
                 && (this.price.compareTo(product.getPrice()) == 0);
     }
 

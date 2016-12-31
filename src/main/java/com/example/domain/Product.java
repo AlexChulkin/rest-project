@@ -17,11 +17,11 @@ import java.time.Instant;
  * Created by alexc_000 on 2016-12-29.
  */
 @NamedQueries({
-        @NamedQuery(name = "Product.findProductsByProductName",
+        @NamedQuery(name = "Product.findProductsByName",
                 query = "SELECT NEW com.example.domain.TimestampAndPrice(p.timestamp, p.price) " +
-                        "FROM Product p WHERE p.productName = :productName"),
+                        "FROM Product p WHERE p.name = :name"),
         @NamedQuery(name = "Product.findProductsByTimestamp",
-                query = "SELECT NEW com.example.domain.NameAndPrice(p.productName, p.price) " +
+                query = "SELECT NEW com.example.domain.NameAndPrice(p.name, p.price) " +
                         "FROM Product p WHERE p.timestamp = :timestamp"),
 })
 @Entity
@@ -29,7 +29,7 @@ import java.time.Instant;
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String productName;
+    private String name;
     private Instant timestamp;
     private BigDecimal price;
     private int version;
@@ -46,15 +46,15 @@ public class Product implements Serializable {
         this.id = id;
     }
 
-    @NotNull(message = "error.productName.notNull")
-    @Size(min = 1, max = 60, message = "error.productName.size")
+    @NotNull(message = "error.name.notNull")
+    @Size(min = 1, max = 60, message = "error.name.size")
     @Column(name = "name")
-    public String getProductName() {
-        return productName;
+    public String getName() {
+        return name;
     }
 
-    public void setProductName(String name) {
-        this.productName = name;
+    public void setName(String name) {
+        this.name = name;
     }
 
     @NotNull(message = "error.timestamp.notNull")

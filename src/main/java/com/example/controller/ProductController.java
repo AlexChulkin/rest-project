@@ -40,10 +40,11 @@ public class ProductController extends ControllerValidationHandler {
 
     @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET)
     @ResponseBody
-    public List<TimestampAndPrice> findProductsByProductName(@Size(min = 1, max = 60) @PathVariable("pn") String productName) {
-        logger.info("Finding products with product name: " + productName);
-        List<TimestampAndPrice> result = productService.findProductsByProductName(productName);
-        logger.info("Successfully found products with product name: " + productName);
+    public List<TimestampAndPrice> findProductsByName(@Size(min = 1, max = 60) @PathVariable("pn") String name) {
+        logger.info("Finding products with product name: " + name);
+        List<TimestampAndPrice> result = productService.findProductsByName(name);
+
+        logger.info("Successfully found products with product name: " + name);
         return result;
     }
 

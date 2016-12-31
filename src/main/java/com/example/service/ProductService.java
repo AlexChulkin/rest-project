@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.List;
 
 public interface ProductService {
-    List<TimestampAndPrice> findProductsByProductName(String productName);
+    List<TimestampAndPrice> findProductsByName(String name);
 
     List<NameAndPrice> findProductsByTimestamp(Instant timestamp);
 
