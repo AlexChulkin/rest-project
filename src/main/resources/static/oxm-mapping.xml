@@ -1,12 +1,4 @@
 <mapping>
-    <class name="com.example.domain.Products">
-        <field name="nameAndPriceList" type="com.example.domain.NameAndPrice" collection="arraylist">
-            <bind-xml name="nameAndPrice"/>
-        </field>
-        <field name="timestampAndPriceList" type="com.example.domain.TimestampAndPrice" collection="arraylist">
-            <bind-xml name="timestampAndPrice"/>
-        </field>
-    </class>
 
     <class name="com.example.domain.NameAndPrice">
         <map-to xml="nameAndPrice"/>

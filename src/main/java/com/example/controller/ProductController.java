@@ -1,7 +1,8 @@
 package com.example.controller;
 
+import com.example.domain.NameAndPrice;
 import com.example.domain.Product;
-import com.example.domain.Products;
+import com.example.domain.TimestampAndPrice;
 import com.example.handler.ControllerValidationHandler;
 import com.example.handler.DateTimeFieldHandler;
 import com.example.service.ProductService;
@@ -19,6 +20,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -38,20 +40,20 @@ public class ProductController extends ControllerValidationHandler {
 
     @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET)
     @ResponseBody
-    public Products findProductsByProductName(@Size(min = 1, max = 60) @PathVariable("pn") String productName) {
+    public List<TimestampAndPrice> findProductsByProductName(@Size(min = 1, max = 60) @PathVariable("pn") String productName) {
         logger.info("Finding products with product name: " + productName);
-        Products result = new Products().setTimestampAndPriceList(productService.findProductsByProductName(productName));
+        List<TimestampAndPrice> result = productService.findProductsByProductName(productName);
         logger.info("Successfully found products with product name: " + productName);
         return result;
     }
 
     @RequestMapping(value = "/ts/{ts}", method = RequestMethod.GET)
     @ResponseBody
-    public Products findProductsByTimestamp(
+    public List<NameAndPrice> findProductsByTimestamp(
             @NotNull @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern) @PathVariable("ts") String timestampString) {
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
         logger.info("Finding products with timestamp: " + timestampString);
-        Products result = new Products().setNameAndPriceList(productService.findProductsByTimestamp(timestamp));
+        List<NameAndPrice> result = productService.findProductsByTimestamp(timestamp);
         logger.info("Successfully found products with timestamp: " + timestampString);
         return result;
     }
