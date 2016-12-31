@@ -38,7 +38,8 @@ public class ProductController extends ControllerValidationHandler {
     @Autowired
     private MessageSource messageSource;
 
-    @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET)
+    @RequestMapping(value = "/pn/{pn}", method = RequestMethod.GET,
+            produces = {"application/json", "application/xml"})
     @ResponseBody
     public List<TimestampAndPrice> findProductsByName(@Size(min = 1, max = 60) @PathVariable("pn") String name) {
         logger.info("Finding products with product name: " + name);
@@ -48,7 +49,9 @@ public class ProductController extends ControllerValidationHandler {
         return result;
     }
 
-    @RequestMapping(value = "/ts/{ts}", method = RequestMethod.GET)
+    @RequestMapping(value = "/ts/{ts}", method = RequestMethod.GET,
+            produces = {"application/json", "application/xml"})
+
     @ResponseBody
     public List<NameAndPrice> findProductsByTimestamp(
             @NotNull @DateTimeFormat(pattern = DateTimeFieldHandler.dateFormatPattern) @PathVariable("ts") String timestampString) {
@@ -59,7 +62,9 @@ public class ProductController extends ControllerValidationHandler {
         return result;
     }
 
-    @RequestMapping(value = "/", method = RequestMethod.POST)
+    @RequestMapping(value = "/", method = RequestMethod.POST,
+            produces = {"application/json", "application/xml"},
+            consumes = {"application/json", "application/xml"})
     @ResponseBody
     public Product create(@Valid @RequestBody Product product) {
         logger.info("Creating product: " + product);
@@ -68,7 +73,8 @@ public class ProductController extends ControllerValidationHandler {
         return product;
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT,
+            consumes = {"application/json", "application/xml"})
     @ResponseBody
     public void update(@Valid @RequestBody Product product,
                        @NotNull @PathVariable("id") Long id) {
