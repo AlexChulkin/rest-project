@@ -14,7 +14,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.castor.CastorMarshaller;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -68,14 +67,6 @@ public class RestProjectApplication {
         objectMapper.registerModule(javaTimeModule);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper;
-    }
-
-    @Bean
-    public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setMessageConverters(Arrays.asList(marshallingHttpMessageConverter(),
-                mappingJackson2HttpMessageConverter()));
-        return restTemplate;
     }
 
     @Bean
