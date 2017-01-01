@@ -1,4 +1,4 @@
-package com.example.validation;
+package com.example.endpoint;
 
 import java.util.LinkedList;
 import java.util.List;

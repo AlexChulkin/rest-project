@@ -1,16 +1,14 @@
-package com.example.controller;
+package com.example.endpoint;
 
 import com.example.domain.NameAndPrice;
 import com.example.domain.Product;
 import com.example.domain.TimestampAndPrice;
 import com.example.serialization.xml.DateTimeFieldHandler;
 import com.example.service.ProductService;
-import com.example.validation.ControllerValidationHandler;
 import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +23,11 @@ import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 /**
  * Created by alexc_000 on 2016-12-29.
  */
-@Controller
+@RestController
 @RequestMapping(value = "/product")
 @Validated
 @Log4j
-public class ProductController extends ControllerValidationHandler {
+public class ProductEndpoint extends AbstractEndpoint {
 
     @Autowired
     private ProductService productService;

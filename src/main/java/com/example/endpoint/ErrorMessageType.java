@@ -1,4 +1,4 @@
-package com.example.validation;
+package com.example.endpoint;
 
 /**
  * Created by alexc_000 on 2016-12-30.

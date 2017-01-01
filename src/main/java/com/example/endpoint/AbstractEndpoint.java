@@ -1,4 +1,4 @@
-package com.example.validation;
+package com.example.endpoint;
 
 import com.example.domain.Product;
 import com.example.service.ProductService;
@@ -27,12 +27,14 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+//import com.example.endpoint.validation.*;
+
 /**
  * Created by alexc_000 on 2016-12-30.
  */
 @ControllerAdvice
 @Log4j
-public abstract class ControllerValidationHandler<T> {
+public abstract class AbstractEndpoint {
     @Autowired
     private MessageSource messageSource;
 

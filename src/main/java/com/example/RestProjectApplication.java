@@ -8,7 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -21,6 +20,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 @SpringBootApplication
@@ -30,6 +30,8 @@ public class RestProjectApplication {
     public static final Locale DEFAULT_LOCALE = Locale.getDefault();
     public static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
 
+    public static final List<MediaType> SUPPORTED_MEDIA_TYPES = Arrays.asList(MediaType.APPLICATION_XML);
+
     static {
         DATE_TIME_FORMATTER = DateTimeFormatter
                 .ofPattern(DATE_TIME_FORMAT_PATTERN)
@@ -38,7 +40,6 @@ public class RestProjectApplication {
     }
 
     public static void main(String[] args) {
-
         SpringApplication.run(RestProjectApplication.class, args);
     }
 
@@ -54,13 +55,11 @@ public class RestProjectApplication {
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
-
         jsonConverter.setObjectMapper(serializingObjectMapper());
         return jsonConverter;
     }
 
     @Bean
-    @Primary
     public ObjectMapper serializingObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         JavaTimeModule javaTimeModule = new JavaTimeModule();
@@ -84,7 +83,7 @@ public class RestProjectApplication {
         MarshallingHttpMessageConverter marshallingHttpMessageConverter = new MarshallingHttpMessageConverter();
         marshallingHttpMessageConverter.setMarshaller(castorMarshaller());
         marshallingHttpMessageConverter.setUnmarshaller(castorMarshaller());
-        marshallingHttpMessageConverter.setSupportedMediaTypes(Arrays.asList(MediaType.APPLICATION_JSON));
+        marshallingHttpMessageConverter.setSupportedMediaTypes(SUPPORTED_MEDIA_TYPES);
         return marshallingHttpMessageConverter;
     }
 
