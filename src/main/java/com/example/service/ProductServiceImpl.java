@@ -32,16 +32,20 @@ public class ProductServiceImpl implements ProductService {
     private EntityManager em;
 
     @Override
-    public List<TimestampAndPrice> findProductsByName(String name) {
+    public List<TimestampAndPrice> findProductsByName(String name, Integer pageIndex, Integer pageSize) {
         return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByName", TimestampAndPrice.class)
                 .setParameter("name", name)
+                .setFirstResult(pageIndex * pageSize)
+                .setMaxResults(pageSize)
                 .getResultList());
     }
 
     @Override
-    public List<NameAndPrice> findProductsByTimestamp(Instant timestamp) {
+    public List<NameAndPrice> findProductsByTimestamp(Instant timestamp, Integer pageIndex, Integer pageSize) {
         return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
                 .setParameter("timestamp", DATE_TIME_FORMATTER.format(timestamp))
+                .setFirstResult(pageIndex * pageSize)
+                .setMaxResults(pageSize)
                 .getResultList());
     }
 

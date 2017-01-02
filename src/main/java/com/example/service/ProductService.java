@@ -12,9 +12,9 @@ import java.time.Instant;
 import java.util.List;
 
 public interface ProductService {
-    List<TimestampAndPrice> findProductsByName(String name);
+    List<TimestampAndPrice> findProductsByName(String name, Integer pageIndex, Integer pageSize);
 
-    List<NameAndPrice> findProductsByTimestamp(Instant timestamp);
+    List<NameAndPrice> findProductsByTimestamp(Instant timestamp, Integer pageIndex, Integer pageSize);
 
     Product findProductById(Long productId);
 
