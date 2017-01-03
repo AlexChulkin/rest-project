@@ -76,7 +76,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Error> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        log.info(messages.get("abstractEndpoint.ResourceNotFoundException.handling", new Object[]{ex.getMessage()}));
+        log.info(messages.get("ResourceNotFoundException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Error(ex.getMessage()));
     }
 
@@ -85,7 +85,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(InconsistentEntityAndIdException.class)
     public ResponseEntity<Error> handleInconsistentEntityAndIdException(InconsistentEntityAndIdException ex) {
-        log.info(messages.get("abstractEndpoint.InconsistentEntityAndIdException.handling", new Object[]{ex.getMessage()}));
+        log.info(messages.get("InconsistentEntityAndIdException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .badRequest()
                 .body(new Error(ex.getMessage()));

@@ -1,11 +1,13 @@
 package com.example.domain;
 
 
+import com.example.config.ConfigurationConstants;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -32,7 +34,8 @@ import static com.example.config.ConfigurationConstants.MAX_NAME_LENGTH;
 @Table(name = "product", uniqueConstraints = @UniqueConstraint(columnNames = {"name", "timestamp"}))
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
-
+    @Autowired
+    ConfigurationConstants configurationConstants;
     private String name;
 
     @JsonFormat(pattern = DATE_TIME_FORMAT_PATTERN)
@@ -61,7 +64,6 @@ public class Product implements Serializable {
         this.id = id;
     }
 
-    @NotNull(message = "{error.product.name.null}")
     @NotBlank(message = "{error.product.name.blank}")
     @Length(max = MAX_NAME_LENGTH, message = "{error.product.name.length}")
     @Column
@@ -73,7 +75,7 @@ public class Product implements Serializable {
         this.name = name;
     }
 
-    @NotNull(message = "error.timestamp.null")
+    @NotNull(message = "{error.product.timestamp.null}")
     @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     public Instant getTimestamp() {
         return timestamp;
@@ -83,7 +85,7 @@ public class Product implements Serializable {
         this.timestamp = timestamp;
     }
 
-    @NotNull(message = "error.price.null")
+    @NotNull(message = "{error.product.price.null}")
     @PriceValid
     public BigDecimal getPrice() {
         return price;

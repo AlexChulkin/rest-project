@@ -4,6 +4,8 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 import java.lang.annotation.*;
 
+import static com.example.config.ConfigurationConstants.ERROR_PRODUCT_PRICE_INVALID;
+
 /**
  * Created by alexc_000 on 2017-01-02.
  */
@@ -13,8 +15,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PriceValid {
 
-    String message() default "{error.product.validation.price}";
-//    String message() default "Price must be not less than 0.01 and not bigger than 9 999 999 999.99. Scale must be exactly 2.";
+    String message() default ERROR_PRODUCT_PRICE_INVALID;
 
     Class<?>[] groups() default {};
 

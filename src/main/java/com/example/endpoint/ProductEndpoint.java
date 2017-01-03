@@ -52,15 +52,15 @@ public class ProductEndpoint extends AbstractEndpoint {
             @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Returns the list of products having the given name"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST,
                     message = "Request mapping should be like /name/{name}. " +
-                            "Name must be not-null, not blank string containing not more than 60 symbols." +
-                            "Page index should be not-negative integer, page size should be positive integer")
+                            "Name must be not-null, not blank string containing not more than " + MAX_NAME_LENGTH +
+                            " symbols. Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<TimestampAndPrice>> findProductsByName(
             @NotBlank(message = "{error.product.name.blank}")
-            @Length(max = 60, message = "{error.product.name.lengh}")
+            @Length(max = MAX_NAME_LENGTH, message = "{error.product.name.length}")
             @PathVariable("name") String name,
-            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.findProduct.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.findProduct.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
+            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.productEndpoint.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.productEndpoint.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
         log.info(messages.get("productEndpoint.findProductsByName.before", new Object[]{name, pageIndex, pageSize}));
         List<TimestampAndPrice> result = productService.findProductsByName(name, pageIndex, pageSize);
 
@@ -83,10 +83,10 @@ public class ProductEndpoint extends AbstractEndpoint {
                     "Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<NameAndPrice>> findProductsByTimestamp(
-            @NotBlank(message = "{error.product.timestamp.blank}")
+            @NotNull(message = "{error.product.timestamp.null}")
             @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN) @PathVariable("timestamp") String timestampString,
-            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.findProduct.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.findProduct.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
+            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.productEndpoint.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.productEndpoint.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
 
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
         log.info(messages.get("productEndpoint.findProductsByTimestamp.before", new Object[]{timestampString, pageIndex, pageSize}));
@@ -135,7 +135,8 @@ public class ProductEndpoint extends AbstractEndpoint {
                     " save operation rollbacked.\"")
     })
     public ResponseEntity<Void> update(@Valid @RequestBody Product product,
-                                       @NotNull(message = "{error.product.id.null}") @Min(value = 1L, message = "{error.product.id.min}")
+                                       @NotBlank(message = "{error.product.id.blank}")
+                                       @Min(value = 1L, message = "{error.product.id.notPositive}")
                                        @PathVariable("id") Long id) {
         checkIfIdExists(id);
         checkIdAndEntityForConsistency(id, product);
@@ -154,8 +155,9 @@ public class ProductEndpoint extends AbstractEndpoint {
             @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Resource(entity) with given id is not found"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either id is null or not a positive long number")
     })
-    public ResponseEntity<Void> delete(@NotNull(message = "{error.product.id.null}")
-                                       @Min(value = 1L, message = "{error.product.id.min}") @PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@NotBlank(message = "{error.product.id.blank}")
+                                       @Min(value = 1L, message = "{error.product.id.notPositive}")
+                                       @PathVariable("id") Long id) {
         checkIfIdExists(id);
         log.info(messages.get("productEndpoint.deleteProduct.before", new Object[]{id}));
         Product product = productService.findProductById(id);
@@ -167,13 +169,13 @@ public class ProductEndpoint extends AbstractEndpoint {
     private void checkIfIdExists(Long id) {
         Product idEntity = productService.findProductById(id);
         Optional.ofNullable(idEntity).orElseThrow(()
-                -> new ResourceNotFoundException(messages.get("productEndpoint.resourceNotFound.message",
+                -> new ResourceNotFoundException(messages.get("error.productEndpoint.inconsistentEntityAndId.message.message",
                 new Object[]{id})));
     }
 
     private void checkIdAndEntityForConsistency(Long id, Product entity) {
         if (!id.equals(entity.getId())) {
-            throw new InconsistentEntityAndIdException(messages.get("productEndpoint.inconsistentEntityAndId.message",
+            throw new InconsistentEntityAndIdException(messages.get("error.productEndpoint.inconsistentEntityAndId.message",
                     new Object[]{id}));
         }
     }

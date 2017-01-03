@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,10 +64,16 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Before
     public void setup() throws Exception {
         super.setup();
+//        entityManager.clear();
+//        entityManager.getEntityManagerFactory().getCache().evictAll();
         productService.saveProduct(createProduct(ICE_CREAM, ONE, NOW_MINUS_5));
-        entityManager.flush();
         testProduct = productService.findProductById(1L);
         entityManager.refresh(testProduct);
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByNamePositive() throws Exception {
         team5 = createProduct(TEA, TWO, NOW_MINUS_5);
         team2 = createProduct(TEA, FIVE, NOW_MINUS_2);
         tea0 = createProduct(TEA, TEN, NOW);
@@ -96,10 +103,6 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         productService.saveProduct(teap5);
         productService.saveProduct(teap7);
 
-    }
-
-    @Test
-    public void findProductsByNamePositive() throws Exception {
         String name = testProduct.getName();
 
         mockMvc.perform(get("/product/name/{name}", name))
@@ -166,18 +169,20 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameNullName() throws Exception {
         mockMvc.perform(get("/product/name/"))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_XML))
                 .andExpect(xpath("/").nodeCount(1))
-                .andExpect(xpath("/error/message").string(is(messages.get("error.productEndpointTest.name.null"))))
+                .andExpect(xpath("/error/message").string(is(messages.get("abstractEndpoint.improper.get.requestmapping"))))
                 .andReturn()
         ;
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameBlankName() throws Exception {
         mockMvc.perform(get("/product/name/{name}", "   "))
                 .andDo(print())
@@ -190,6 +195,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameTooLongName() throws Exception {
         StringBuilder sb = new StringBuilder();
         IntStream.rangeClosed(0, MAX_NAME_LENGTH).forEach(sb::append);
@@ -199,12 +205,13 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$.length()", is(1)))
-                .andExpect(jsonPath("$.[?(@.field == 'findProductsByName.arg0')].message", hasItem(messages.get("error.product.name.tooLong"))))
+                .andExpect(jsonPath("$.[?(@.field == 'findProductsByName.arg0')].message", hasItem(messages.get("error.product.name.length"))))
                 .andReturn()
         ;
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameNegativePageIndex() throws Exception {
         mockMvc.perform(get("/product/name/{name}?pageIndex=-1", testProduct.getName()))
                 .andDo(print())
@@ -217,19 +224,21 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameNotIntegerPageIndex() throws Exception {
         mockMvc.perform(get("/product/name/{name}?pageIndex=t", testProduct.getName()))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$.length()", is(3)))
-                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.pageIndex.notInteger"))))
+                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.notInteger.message"))))
                 .andReturn()
         ;
     }
 
 
     @Test
+    @DirtiesContext
     public void findProductsByNameNotPositivePageSize() throws Exception {
         mockMvc.perform(get("/product/name/{name}?pageSize=0", testProduct.getName()))
                 .andDo(print())
@@ -242,13 +251,14 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     }
 
     @Test
+    @DirtiesContext
     public void findProductsByNameNotIntegerPageSize() throws Exception {
         mockMvc.perform(get("/product/name/{name}?pageSize=t", testProduct.getName()))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$.length()", is(3)))
-                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.pageSize.notInteger"))))
+                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.notInteger.message"))))
                 .andReturn()
         ;
     }
