@@ -4,11 +4,12 @@ package com.example.domain;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,12 +32,23 @@ import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private static final BigDecimal MINIMAL_VALUE = BigDecimal.valueOf(0.01);
+
     private String name;
     @JsonFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     private Instant timestamp;
     private BigDecimal price;
     private int version;
     private Long id;
+
+    public Product(String name, Instant timestamp, BigDecimal price) {
+        this.name = name;
+        this.timestamp = timestamp;
+        this.price = price;
+    }
+
+    public Product() {
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,7 +62,8 @@ public class Product implements Serializable {
     }
 
     @NotNull(message = "error.name.notNull")
-    @Size(min = 1, max = 60, message = "error.name.size")
+    @NotBlank(message = "Product name can't be blank")
+    @Length(max = 60, message = "error.name.size")
     @Column(name = "name")
     public String getName() {
         return name;
@@ -71,6 +84,7 @@ public class Product implements Serializable {
     }
 
     @NotNull(message = "error.price.notNull")
+    @PriceValid
     public BigDecimal getPrice() {
         return price;
     }

@@ -1,9 +1,12 @@
 package com.example;
 
+import com.example.serialization.json.BigDecimalDeserializer;
+import com.example.serialization.json.BigDecimalSerializer;
 import com.example.serialization.json.InstantDeserializer;
 import com.example.serialization.json.InstantSerializer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,6 +18,7 @@ import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.castor.CastorMarshaller;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -65,6 +69,10 @@ public class RestProjectApplication {
         javaTimeModule.addSerializer(Instant.class, new InstantSerializer());
         javaTimeModule.addDeserializer(Instant.class, new InstantDeserializer());
         objectMapper.registerModule(javaTimeModule);
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(BigDecimal.class, new BigDecimalSerializer());
+        module.addDeserializer(BigDecimal.class, new BigDecimalDeserializer());
+        objectMapper.registerModule(module);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper;
     }

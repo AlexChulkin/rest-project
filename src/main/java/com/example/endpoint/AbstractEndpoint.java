@@ -1,6 +1,7 @@
 package com.example.endpoint;
 
 import lombok.extern.log4j.Log4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -9,6 +10,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
@@ -54,6 +56,15 @@ public abstract class AbstractEndpoint {
     }
 
     /**
+     * Database integrity exception handler
+     */
+    @ExceptionHandler
+    protected ResponseEntity<Error> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.info("DataIntegrityViolationException handling:" + ex.getMessage());
+        return ResponseEntity.badRequest().body(new Error(ex.getMessage()));
+    }
+
+    /**
      * When resource id is illegal.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -70,6 +81,40 @@ public abstract class AbstractEndpoint {
         log.info("InconsistentEntityAndIdException validation:" + ex.getMessage());
         return ResponseEntity
                 .badRequest()
+                .body(new Error(ex.getMessage()));
+    }
+
+    /**
+     * Handler for the case of improper URI argument values.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Error> handleException(IllegalArgumentException ex) {
+        log.info("IllegalArgumentException handling:" + ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new Error(ex.getMessage()));
+    }
+
+
+    /**
+     * Handler for the case of improper method argument types.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Error> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+        log.info(" MethodArgumentTypeMismatchException handling:" + ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new Error(ex.getMessage()));
+    }
+
+    /**
+     * Handler for the case of unexpected errors.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Error> handleException(Exception ex) {
+        log.info(" Default Exception handling:" + ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new Error(ex.getMessage()));
     }
 

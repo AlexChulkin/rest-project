@@ -18,7 +18,7 @@
         <field name="name" type="string">
             <bind-xml name="name" node="element"/>
         </field>
-        <field name="price" type="java.math.BigDecimal">
+        <field name="price" type="java.math.BigDecimal" handler="bigDecimalHandler">
             <bind-xml name="price" node="element"/>
         </field>
     </class>
@@ -28,13 +28,17 @@
         <field name="timestamp" type="string" handler="dateHandler">
             <bind-xml name="timestamp" node="element"/>
         </field>
-        <field name="price" type="java.math.BigDecimal">
+        <field name="price" type="java.math.BigDecimal" handler="bigDecimalHandler">
             <bind-xml name="price" node="element"/>
         </field>
     </class>
 
 
     <field-handler name="dateHandler" class="com.example.serialization.xml.DateTimeFieldHandler">
-        <param name="date-time-format" value="yyyy-MM-dd hh:mm:ss"/>
+        <!--<param name="date-time-format" value="yyyy-MM-dd hh:mm:ss"/>-->
     </field-handler>
+
+    <field-handler name="bigDecimalHandler" class="com.example.serialization.xml.BigDecimalFieldHandler">
+    </field-handler>
+
 </mapping>

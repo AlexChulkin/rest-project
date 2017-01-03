@@ -10,6 +10,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.extern.log4j.Log4j;
+import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,7 +24,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Instant;
@@ -39,7 +40,7 @@ import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 @Validated
 @Log4j
 public class ProductEndpoint extends AbstractEndpoint {
-    private static final String DEFAULT_PAGE_SIZE = "30";
+    private static final String DEFAULT_PAGE_SIZE = "5";
     private static final String DEFAULT_PAGE_INDEX = "0";
 
     @Autowired
@@ -64,10 +65,11 @@ public class ProductEndpoint extends AbstractEndpoint {
     })
     public ResponseEntity<List<TimestampAndPrice>> findProductsByName(
             @NotNull(message = "Product name can't be null")
-            @Size(min = 1, max = 60, message = "Product name can't be blank, can't be longer than 60 symbols")
+            @NotBlank(message = "Product name can't be blank")
+            @Length(max = 60, message = "Product name can't exceed 60 symbols")
             @PathVariable("name") String name,
-            @ApiParam("The size of the page to be returned") @Min(value = 1) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-            @ApiParam("Zero-based page index") @Min(value = 0) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
+            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "Page size must be positive integer") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+            @ApiParam("Zero-based page index") @Min(value = 0, message = "Page index must be non-negative integer") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
         log.info("Finding products with name: " + name + ", page index: " + pageIndex + ", page size: " + pageSize);
         List<TimestampAndPrice> result = productService.findProductsByName(name, pageIndex, pageSize);
 
@@ -87,7 +89,8 @@ public class ProductEndpoint extends AbstractEndpoint {
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<NameAndPrice>> findProductsByTimestamp(
-            @NotNull @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN) @PathVariable("timestamp") String timestampString,
+            @NotBlank(message = "Timestamp can't be blank or null")
+            @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN) @PathVariable("timestamp") String timestampString,
             @ApiParam("The size of the page to be returned") @Min(value = 1) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
             @ApiParam("Zero-based page index") @Min(value = 0) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
 
@@ -107,8 +110,10 @@ public class ProductEndpoint extends AbstractEndpoint {
             response = Product.class)
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_CREATED, message = "Returns the newly persisted product entity"),
-            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either the json/xml input  entity contains the format errors" +
-                    "or the input product entity is not validated.")
+            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either the json/xml input entity contains the format errors" +
+                    "or the input product entity contains validation errors, or some database error occurred " +
+                    "(probably there was a try to violate the DB constraints relating the unique key (name, timestamp) and " +
+                    "save operation rollbacked.")
     })
     public ResponseEntity<Product> create(@Valid @RequestBody Product product,
                                           HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -130,8 +135,10 @@ public class ProductEndpoint extends AbstractEndpoint {
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_NO_CONTENT, message = "Operation succeeded"),
             @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Resource(entity) with given id is not found"),
-            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either the json/xml input entity contains the format errors" +
-                    "or the input product entity is not validated, or id is null or not a positive long number or not correspondent to given entity")
+            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either the json/xml input entity contains " +
+                    "the format errors or the input product entity is not validated, or id is null or not a positive long number or not correspondent to given entity," +
+                    " or some database error occurred (probably there was a try to violate the DB constraints relating the unique key (name, timestamp) and " +
+                    " save operation rollbacked.\"")
     })
     public ResponseEntity<Void> update(@Valid @RequestBody Product product,
                                        @NotNull(message = "Product id can't be null") @Min(value = 1L, message = "Product id can't be less than 1")
