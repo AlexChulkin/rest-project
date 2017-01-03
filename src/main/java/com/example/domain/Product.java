@@ -14,7 +14,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
+import static com.example.config.ConfigurationConstants.DATE_TIME_FORMAT_PATTERN;
+import static com.example.config.ConfigurationConstants.MAX_NAME_LENGTH;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -32,9 +33,8 @@ import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final BigDecimal MINIMAL_VALUE = BigDecimal.valueOf(0.01);
-
     private String name;
+
     @JsonFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     private Instant timestamp;
     private BigDecimal price;
@@ -61,10 +61,10 @@ public class Product implements Serializable {
         this.id = id;
     }
 
-    @NotNull(message = "error.name.notNull")
-    @NotBlank(message = "Product name can't be blank")
-    @Length(max = 60, message = "error.name.size")
-    @Column(name = "name")
+    @NotNull(message = "{error.product.name.null}")
+    @NotBlank(message = "{error.product.name.blank}")
+    @Length(max = MAX_NAME_LENGTH, message = "{error.product.name.length}")
+    @Column
     public String getName() {
         return name;
     }
@@ -73,7 +73,7 @@ public class Product implements Serializable {
         this.name = name;
     }
 
-    @NotNull(message = "error.timestamp.notNull")
+    @NotNull(message = "error.timestamp.null")
     @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN)
     public Instant getTimestamp() {
         return timestamp;
@@ -83,7 +83,7 @@ public class Product implements Serializable {
         this.timestamp = timestamp;
     }
 
-    @NotNull(message = "error.price.notNull")
+    @NotNull(message = "error.price.null")
     @PriceValid
     public BigDecimal getPrice() {
         return price;

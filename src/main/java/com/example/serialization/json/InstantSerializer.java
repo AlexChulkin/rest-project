@@ -7,7 +7,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
 import java.time.Instant;
 
-import static com.example.RestProjectApplication.DATE_TIME_FORMATTER;
+import static com.example.config.ConfigurationConstants.DATE_TIME_FORMATTER;
+
 
 /**
  * Created by alexc_000 on 2016-12-31.

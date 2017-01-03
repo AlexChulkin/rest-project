@@ -13,7 +13,6 @@ import lombok.extern.log4j.Log4j;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -30,7 +29,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
+import static com.example.config.ConfigurationConstants.*;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -40,39 +39,32 @@ import static com.example.RestProjectApplication.DATE_TIME_FORMAT_PATTERN;
 @Validated
 @Log4j
 public class ProductEndpoint extends AbstractEndpoint {
-    private static final String DEFAULT_PAGE_SIZE = "5";
-    private static final String DEFAULT_PAGE_INDEX = "0";
-
     @Autowired
     private ProductService productService;
-
-    @Autowired
-    private MessageSource messageSource;
-
 
     @RequestMapping(value = "/name/{name}", method = RequestMethod.GET,
             produces = {"application/json", "application/xml"})
     @ApiOperation(
             value = "Get all products with given name",
-            notes = "Returns the products with given name" +
-                    " specified by the size parameter with page offset specified by page parameter.",
+            notes = "Returns the products with given name specified by the size parameter with page offset specified by page parameter.",
             response = List.class)
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Returns the list of products having the given name"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST,
-                    message = "Product name must be not-null, not blank string containing not more than 60 symbols." +
+                    message = "Request mapping should be like /name/{name}. " +
+                            "Name must be not-null, not blank string containing not more than 60 symbols." +
                             "Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<TimestampAndPrice>> findProductsByName(
-            @NotNull(message = "Product name can't be null")
-            @NotBlank(message = "Product name can't be blank")
-            @Length(max = 60, message = "Product name can't exceed 60 symbols")
+            @NotBlank(message = "{error.product.name.blank}")
+            @Length(max = 60, message = "{error.product.name.lengh}")
             @PathVariable("name") String name,
-            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "Page size must be positive integer") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-            @ApiParam("Zero-based page index") @Min(value = 0, message = "Page index must be non-negative integer") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
-        log.info("Finding products with name: " + name + ", page index: " + pageIndex + ", page size: " + pageSize);
+            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.findProduct.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.findProduct.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
+        log.info(messages.get("productEndpoint.findProductsByName.before", new Object[]{name, pageIndex, pageSize}));
         List<TimestampAndPrice> result = productService.findProductsByName(name, pageIndex, pageSize);
 
+        log.info(messages.get("productEndpoint.findProductsByName.after", new Object[]{name, pageIndex, pageSize}));
         log.info("Successfully found products with product name: " + name + ", page index: " + pageIndex + ", page size: " + pageSize);
         return ResponseEntity.ok().body(result);
     }
@@ -86,18 +78,20 @@ public class ProductEndpoint extends AbstractEndpoint {
             response = List.class)
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Returns the list of products having the given timestamp"),
-            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Page index should be not-negative integer, page size should be positive integer")
+            @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Request mapping should be like /timestamo/{timestamp}." +
+                    "Timestamp must be of format 'yyyy-MM-dd hh:mm:ss'" +
+                    "Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<NameAndPrice>> findProductsByTimestamp(
-            @NotBlank(message = "Timestamp can't be blank or null")
+            @NotBlank(message = "{error.product.timestamp.blank}")
             @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN) @PathVariable("timestamp") String timestampString,
-            @ApiParam("The size of the page to be returned") @Min(value = 1) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
-            @ApiParam("Zero-based page index") @Min(value = 0) @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
+            @ApiParam("The size of the page to be returned") @Min(value = 1, message = "{error.findProduct.pageSize.notPositive}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_SIZE) Integer pageSize,
+            @ApiParam("Zero-based page index") @Min(value = 0, message = "{error.findProduct.pageIndex.negative}") @RequestParam(required = false, defaultValue = DEFAULT_PAGE_INDEX) Integer pageIndex) {
 
         Instant timestamp = DateTimeFieldHandler.parse(timestampString);
-        log.info("Finding products with timestamp: " + timestampString + ", page index: " + pageIndex + ", page size: " + pageSize);
+        log.info(messages.get("productEndpoint.findProductsByTimestamp.before", new Object[]{timestampString, pageIndex, pageSize}));
         List<NameAndPrice> result = productService.findProductsByTimestamp(timestamp, pageIndex, pageSize);
-        log.info("Successfully found products with timestamp: " + timestampString + ", page index: " + pageIndex + ", page size: " + pageSize);
+        log.info(messages.get("productEndpoint.findProductsByTimestamp.after", new Object[]{timestampString, pageIndex, pageSize}));
         return ResponseEntity.ok().body(result);
     }
 
@@ -117,9 +111,9 @@ public class ProductEndpoint extends AbstractEndpoint {
     })
     public ResponseEntity<Product> create(@Valid @RequestBody Product product,
                                           HttpServletRequest request, HttpServletResponse response) throws Exception {
-        log.info("Creating product: " + product);
+        log.info(messages.get("productEndpoint.createProduct.before", new Object[]{product}));
         Product newProduct = productService.saveProduct(product);
-        log.info("Successfully created product: " + product);
+        log.info(messages.get("productEndpoint.createProduct.after", new Object[]{product}));
         return ResponseEntity
                 .created(new URI(request.getRequestURL().append("/").append(newProduct.getId()).toString()))
                 .body(newProduct)
@@ -141,46 +135,46 @@ public class ProductEndpoint extends AbstractEndpoint {
                     " save operation rollbacked.\"")
     })
     public ResponseEntity<Void> update(@Valid @RequestBody Product product,
-                                       @NotNull(message = "Product id can't be null") @Min(value = 1L, message = "Product id can't be less than 1")
+                                       @NotNull(message = "{error.product.id.null}") @Min(value = 1L, message = "{error.product.id.min}")
                                        @PathVariable("id") Long id) {
         checkIfIdExists(id);
         checkIdAndEntityForConsistency(id, product);
-        log.info("Updating product: " + product);
+        log.info(messages.get("productEndpoint.updateProduct.before", new Object[]{product}));
         productService.saveProduct(product);
-        log.info("Product updated successfully with info: " + product);
+        log.info(messages.get("productEndpoint.updateProduct.after", new Object[]{product}));
         return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     @ApiOperation(
             value = "Deletes the the product with given id in the database",
-            notes = "Deletes the the product with given id in the database. Returns NO_CONTENT.",
             response = Void.class)
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_NO_CONTENT, message = "Operation succeeded"),
             @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Resource(entity) with given id is not found"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either id is null or not a positive long number")
     })
-    public ResponseEntity<Void> delete(@NotNull(message = "Product id can't be null")
-                                       @Min(value = 1L, message = "Product id can't be less than 1")
-                                       @PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@NotNull(message = "{error.product.id.null}")
+                                       @Min(value = 1L, message = "{error.product.id.min}") @PathVariable("id") Long id) {
         checkIfIdExists(id);
-        log.info("Deleting product with id: " + id);
+        log.info(messages.get("productEndpoint.deleteProduct.before", new Object[]{id}));
         Product product = productService.findProductById(id);
         productService.deleteProduct(product);
-        log.info("Product with id: " + id + " deleted successfully");
+        log.info(messages.get("productEndpoint.deleteProduct.after", new Object[]{id}));
         return ResponseEntity.noContent().build();
     }
 
     private void checkIfIdExists(Long id) {
         Product idEntity = productService.findProductById(id);
         Optional.ofNullable(idEntity).orElseThrow(()
-                -> new ResourceNotFoundException("Entity with input id = " + id + " does not exist"));
+                -> new ResourceNotFoundException(messages.get("productEndpoint.resourceNotFound.message",
+                new Object[]{id})));
     }
 
     private void checkIdAndEntityForConsistency(Long id, Product entity) {
         if (!id.equals(entity.getId())) {
-            throw new InconsistentEntityAndIdException("Input id = " + id + " and entity do not correspond");
+            throw new InconsistentEntityAndIdException(messages.get("productEndpoint.inconsistentEntityAndId.message",
+                    new Object[]{id}));
         }
     }
 }

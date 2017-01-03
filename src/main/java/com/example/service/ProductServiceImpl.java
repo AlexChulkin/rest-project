@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
+
+import static com.example.config.ConfigurationConstants.DATE_TIME_FORMATTER;
 
 /**
  * Created by alexc_000 on 2016-12-29.
@@ -23,9 +23,6 @@ import java.util.List;
 @Repository
 @Transactional(readOnly = true)
 public class ProductServiceImpl implements ProductService {
-    private static final String INSTANT_TIMESTAMP_FORMAT = "yyyy-MM-dd hh:mm:ss";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(INSTANT_TIMESTAMP_FORMAT);
-
     @Autowired
     private ProductRepository productRepository;
     @PersistenceContext
@@ -33,20 +30,20 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<TimestampAndPrice> findProductsByName(String name, Integer pageIndex, Integer pageSize) {
-        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByName", TimestampAndPrice.class)
+        return em.createNamedQuery("Product.findProductsByName", TimestampAndPrice.class)
                 .setParameter("name", name)
                 .setFirstResult(pageIndex * pageSize)
                 .setMaxResults(pageSize)
-                .getResultList());
+                .getResultList();
     }
 
     @Override
     public List<NameAndPrice> findProductsByTimestamp(Instant timestamp, Integer pageIndex, Integer pageSize) {
-        return Collections.unmodifiableList(em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
+        return em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
                 .setParameter("timestamp", DATE_TIME_FORMATTER.format(timestamp))
                 .setFirstResult(pageIndex * pageSize)
                 .setMaxResults(pageSize)
-                .getResultList());
+                .getResultList();
     }
 
     @Override

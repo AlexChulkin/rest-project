@@ -13,8 +13,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PriceValid {
 
-
-    String message() default "Price must be not less than 0.01 and not bigger than 9 999 999 999.99. Scale must be exactly 2.";
+    String message() default "{error.product.validation.price}";
+//    String message() default "Price must be not less than 0.01 and not bigger than 9 999 999 999.99. Scale must be exactly 2.";
 
     Class<?>[] groups() default {};
 

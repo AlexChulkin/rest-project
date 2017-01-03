@@ -1,12 +1,15 @@
 package com.example.endpoint;
 
+import com.example.components.Messages;
 import lombok.extern.log4j.Log4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,12 +29,15 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 @Log4j
 public abstract class AbstractEndpoint {
+    @Autowired
+    protected Messages messages;
 
     /**
      * Exception validation for the cases when @Valid-annotated parameters fail validation process.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<Error>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.info(messages.get("abstractEndpoint.MethodArgumentNotValidException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.badRequest().body(convertObjectErrorsToErrors(ex.getBindingResult().getAllErrors()));
 
     }
@@ -42,6 +48,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler
     protected ResponseEntity<List<Error>> handleConstraintViolationException(ConstraintViolationException ex) {
+        log.info(messages.get("abstractEndpoint.HttpMessageNotReadableException.handling", new Object[]{ex.getMessage()}));
         List<Error> errors = convertConstraintViolationExceptionToErrors(ex);
         return ResponseEntity.badRequest().body(errors);
     }
@@ -51,7 +58,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler
     protected ResponseEntity<Error> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
-        log.info("HttpMessageNotReadableException validation:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.HttpMessageNotReadableException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.badRequest().body(new Error(ex.getMessage()));
     }
 
@@ -60,7 +67,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler
     protected ResponseEntity<Error> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        log.info("DataIntegrityViolationException handling:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.DataIntegrityViolationException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.badRequest().body(new Error(ex.getMessage()));
     }
 
@@ -69,7 +76,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Error> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        log.info("ResourceNotFoundException validation: " + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.ResourceNotFoundException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Error(ex.getMessage()));
     }
 
@@ -78,7 +85,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(InconsistentEntityAndIdException.class)
     public ResponseEntity<Error> handleInconsistentEntityAndIdException(InconsistentEntityAndIdException ex) {
-        log.info("InconsistentEntityAndIdException validation:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.InconsistentEntityAndIdException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .badRequest()
                 .body(new Error(ex.getMessage()));
@@ -89,7 +96,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Error> handleException(IllegalArgumentException ex) {
-        log.info("IllegalArgumentException handling:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.IllegalArgumentException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new Error(ex.getMessage()));
@@ -101,7 +108,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Error> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
-        log.info(" MethodArgumentTypeMismatchException handling:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.MethodArgumentTypeMismatchException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new Error(ex.getMessage()));
@@ -110,9 +117,25 @@ public abstract class AbstractEndpoint {
     /**
      * Handler for the case of unexpected errors.
      */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Error> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+        log.info(messages.get("abstractEndpoint.HttpRequestMethodNotSupportedException.handling", new Object[]{ex.getMessage()}));
+        if (ex.getMethod().equals("GET")) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new Error(messages.get("abstractEndpoint.improper.get.requestmapping")));
+        }
+        return ResponseEntity
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(new Error(ex.getMessage()));
+    }
+
+    /**
+     * Handler for the case of unexpected errors.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Error> handleException(Exception ex) {
-        log.info(" Default Exception handling:" + ex.getMessage());
+        log.info(messages.get("abstractEndpoint.DefaultException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new Error(ex.getMessage()));

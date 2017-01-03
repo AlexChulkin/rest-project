@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-import static com.example.RestProjectApplication.DATE_TIME_FORMATTER;
-import static com.example.RestProjectApplication.DEFAULT_ZONE_ID;
+import static com.example.config.ConfigurationConstants.DATE_TIME_FORMATTER;
+import static com.example.config.ConfigurationConstants.DEFAULT_ZONE_ID;
 
 /**
  * Created by alexc_000 on 2016-12-29.
