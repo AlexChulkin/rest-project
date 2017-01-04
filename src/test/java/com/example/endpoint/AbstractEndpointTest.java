@@ -1,6 +1,13 @@
 package com.example.endpoint;
 
+import com.example.serialization.json.BigDecimalDeserializer;
+import com.example.serialization.json.BigDecimalSerializer;
+import com.example.serialization.json.InstantDeserializer;
+import com.example.serialization.json.InstantSerializer;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.oxm.castor.CastorMarshaller;
@@ -10,7 +17,9 @@ import org.springframework.web.context.WebApplicationContext;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.time.Instant;
 
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
@@ -24,7 +33,7 @@ public class AbstractEndpointTest {
     @Autowired
     protected WebApplicationContext webApplicationContext;
     protected MockMvc mockMvc;
-    @Autowired
+    //    @Autowired
     ObjectMapper objectMapper;
     @Autowired
     CastorMarshaller castorMarshaller;
@@ -32,6 +41,17 @@ public class AbstractEndpointTest {
     protected void setup() throws Exception {
 
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
+
+        objectMapper = new ObjectMapper();
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(Instant.class, new InstantSerializer());
+        javaTimeModule.addDeserializer(Instant.class, new InstantDeserializer());
+        objectMapper.registerModule(javaTimeModule);
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(BigDecimal.class, new BigDecimalSerializer());
+        module.addDeserializer(BigDecimal.class, new BigDecimalDeserializer());
+        objectMapper.registerModule(module);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**

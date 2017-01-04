@@ -50,15 +50,26 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Long findNumberOfProductsWithGivenNameAndTimestamp(String name, Instant timestamp) {
+        return em.createNamedQuery("Product.findNumberOfProductsWithGivenNameAndTimestamp", Long.class)
+                .setParameter("timestamp", timestamp)
+                .setParameter("name", name)
+                .getSingleResult();
+    }
+
+    @Override
     @Transactional
     public Product saveProduct(Product product) {
-        return productRepository.save(product);
+        Product result = productRepository.save(product);
+        em.flush();
+        return result;
     }
 
     @Override
     @Transactional
     public void deleteProduct(Product product) {
         productRepository.delete(product);
+        em.flush();
     }
 
     @Override

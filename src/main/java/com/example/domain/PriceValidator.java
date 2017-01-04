@@ -3,6 +3,7 @@ package com.example.domain;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import java.math.BigDecimal;
+import java.util.Optional;
 
 /**
  * Created by alexc_000 on 2017-01-02.
@@ -18,7 +19,7 @@ public class PriceValidator implements ConstraintValidator<PriceValid, BigDecima
 
     @Override
     public boolean isValid(BigDecimal price, ConstraintValidatorContext ctx) {
-        return !((price.compareTo(MINIMAL_VALUE) < 0) || (price.compareTo(MAXIMAL_VALUE) > 0)) && price.scale() == SCALE;
+        return Optional.ofNullable(price).isPresent() && !((price.compareTo(MINIMAL_VALUE) < 0) || (price.compareTo(MAXIMAL_VALUE) > 0)) && price.scale() == SCALE;
 
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -23,7 +24,7 @@ import java.util.stream.IntStream;
 
 import static com.example.config.ConfigurationConstants.*;
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -52,14 +53,13 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     private static final BigDecimal TWO = BigDecimal.valueOf(2).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal FIVE = BigDecimal.valueOf(5).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal TEN = BigDecimal.TEN.setScale(2, BigDecimal.ROUND_HALF_UP);
-
+    private static final String RESOURCE_LOCATION_PATTERN = "http://localhost/product/?";
     @Autowired
-    EntityManager entityManager;
+    private EntityManager entityManager;
     @Autowired
     private ProductService productService;
     @Autowired
     private Messages messages;
-
     private Product testProduct;
     private String testProductName;
     private String testTimestampString;
@@ -88,8 +88,8 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Before
     public void setup() throws Exception {
         super.setup();
-        productService.saveProduct(createProduct(ICE_CREAM, ONE, NOW_MINUS_5));
-        testProduct = productService.findProductById(1L);
+
+        testProduct = productService.saveProduct(createProduct(ICE_CREAM, ONE, NOW_MINUS_5));
         entityManager.refresh(testProduct);
         testProductName = testProduct.getName();
         testTimestampString = DATE_TIME_FORMATTER.format(testProduct.getTimestamp());
@@ -380,7 +380,6 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         ;
     }
 
-
     @Test
     @DirtiesContext
     public void findProductsByTimestampNotPositivePageSize() throws Exception {
@@ -407,6 +406,1018 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         ;
     }
 
+    @Test
+    @DirtiesContext
+    public void createProductPositive() throws Exception {
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(redirectedUrlPattern(RESOURCE_LOCATION_PATTERN))
+                .andReturn();
+        long id = getResourceIdFromUrl(result.getResponse().getRedirectedUrl());
+        assert id == 2;
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(team5.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithNullPrice() throws Exception {
+        team5.setPrice(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithPriceLesserThanMin() throws Exception {
+        team5.setPrice(BigDecimal.valueOf(0.00));
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWitPriceBiggerThanMax() throws Exception {
+        team5.setPrice(BigDecimal.valueOf(10_000_000_000.00));
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithUncorrectTimestampFormat() throws Exception {
+        team5.setTimestamp(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'timestamp')].message", hasItem(messages.get("error.product.timestamp.null"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithBlankName() throws Exception {
+        team5.setName("  ");
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.blank"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithNullName() throws Exception {
+        team5.setName(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.blank"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductWithTooLongName() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        IntStream.rangeClosed(0, MAX_NAME_LENGTH).forEach(sb::append);
+        String tooLongName = sb.toString();
+        team5.setName(tooLongName);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.length"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/name/{name}", sb.toString()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'findProductsByName.arg0')].message", hasItem(messages.get("error.product.name.length"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductThatViolatesDBConstraints() throws Exception {
+        Instant violatingTimestamp = testProduct.getTimestamp();
+        String violatingProductName = testProductName;
+        Product violatingProduct = new Product(violatingProductName, violatingTimestamp, testProduct.getPrice().add(ONE));
+        String violatingProductJson = json(violatingProduct);
+
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(violatingProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.productEndpoint.dBConstraintViolation.message", new Object[]{violatingProductName, DATE_TIME_FORMATTER.format(violatingTimestamp)}))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(violatingTimestamp)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/name/{name}", violatingProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(violatingTimestamp))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void createProductUsingNotValidJson() throws Exception {
+
+        String team5FakeJson = json(team5).substring(1);
+        MvcResult result = mockMvc.perform(post("/product")
+                .content(team5FakeJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.HttpMessageNotReadableException.message"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductPositive() throws Exception {
+        BigDecimal updatedPrice = testProduct.getPrice().add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", testProduct.getId())
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isNoContent())
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(updatedPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(updatedPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductNullId() throws Exception {
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        MvcResult result = mockMvc.perform(put("/product/")
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem((messages.get("abstractEndpoint.improper.put.requestmapping")))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductBlankId() throws Exception {
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", "   ")
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.value == null)].message", hasItem((messages.get("error.product.id.null")))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductNotExistingId() throws Exception {
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+        Long notExistingId = 2L;
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", notExistingId)
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.value == null)].message", hasItem((messages.get("error.productEndpoint.resourceNotFound.message", new Object[]{notExistingId})))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductNegativeIdValue() throws Exception {
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        Long negativeId = -1L;
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", negativeId)
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'update.arg1')].message", hasItem((messages.get("error.product.id.notPositive")))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductNotConsistentResourceAndId() throws Exception {
+        productService.saveProduct(team5);
+        entityManager.clear();
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        Long inconsistentId = team5.getId();
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", inconsistentId)
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem((messages.get("error.productEndpoint.inconsistentResourceAndId.message", new Object[]{inconsistentId, testProduct.getId()})))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductNotLongId() throws Exception {
+
+        BigDecimal oldPrice = testProduct.getPrice();
+        BigDecimal updatedPrice = oldPrice.add(TEN);
+        testProduct.setPrice(updatedPrice);
+        String testProductJson = json(testProduct);
+
+        String notLongId = "notLongId";
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", notLongId)
+                .content(testProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.productEndpoint.notLong.message"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductUsingNotValidJson() throws Exception {
+        BigDecimal oldPrice = testProduct.getPrice();
+        testProduct.setPrice(testProduct.getPrice().add(TEN));
+        String fakeTestProductJson = json(testProduct).substring(1);
+        MvcResult result = mockMvc.perform(put("/product/{id}", testProduct.getId())
+                .content(fakeTestProductJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.HttpMessageNotReadableException.message"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", testProductName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductThatViolatesDBConstraints() throws Exception {
+        Instant dangerousTimestamp = testProduct.getTimestamp();
+        String dangerousName = testProductName;
+        String yetNotViolatingName = COLA;
+        Product dangerousProduct = new Product(yetNotViolatingName, dangerousTimestamp, testProduct.getPrice().add(ONE));
+        productService.saveProduct(dangerousProduct);
+        entityManager.clear();
+        dangerousProduct.setName(dangerousName);
+
+        String dangerousJson = json(dangerousProduct);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", dangerousProduct.getId())
+                .content(dangerousJson)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.productEndpoint.dBConstraintViolation.message", new Object[]{dangerousProduct.getName(), DATE_TIME_FORMATTER.format(dangerousTimestamp)}))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(dangerousTimestamp)))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(dangerousProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(yetNotViolatingName)))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/name/{name}", dangerousName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(dangerousTimestamp))))
+                .andReturn()
+        ;
+    }
+
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithNullPrice() throws Exception {
+        productService.saveProduct(team5);
+        entityManager.clear();
+        BigDecimal oldPrice = team5.getPrice();
+
+        team5.setPrice(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(team5.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithPriceLesserThanMin() throws Exception {
+
+        productService.saveProduct(team5);
+        entityManager.clear();
+        BigDecimal oldPrice = team5.getPrice();
+
+        team5.setPrice(BigDecimal.valueOf(0.00));
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(team5.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWitPriceBiggerThanMax() throws Exception {
+        BigDecimal oldPrice = team5.getPrice();
+        productService.saveProduct(team5);
+        entityManager.clear();
+
+        team5.setPrice(BigDecimal.valueOf(10_000_000_000.00));
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'price')].message", hasItem(messages.get("error.product.price.invalid"))))
+                .andReturn();
+        entityManager.clear();
+
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(team5.getTimestamp()))))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(oldPrice.toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithBlankName() throws Exception {
+        String oldName = team5.getName();
+        productService.saveProduct(team5);
+        entityManager.clear();
+
+        team5.setName("  ");
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.blank"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(oldName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithNullName() throws Exception {
+        String oldName = team5.getName();
+        productService.saveProduct(team5);
+        entityManager.clear();
+
+        team5.setName(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.blank"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(oldName)))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithTooLongName() throws Exception {
+        productService.saveProduct(team5);
+        entityManager.clear();
+        String oldName = team5.getName();
+
+
+        StringBuilder sb = new StringBuilder();
+        IntStream.rangeClosed(0, MAX_NAME_LENGTH).forEach(sb::append);
+        String tooLongName = sb.toString();
+        team5.setName(tooLongName);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'name')].message", hasItem(messages.get("error.product.name.length"))))
+                .andReturn();
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(team5.getTimestamp())))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].name", is(oldName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/name/{name}", sb.toString()))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'findProductsByName.arg0')].message", hasItem(messages.get("error.product.name.length"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void updateProductWithUncorrectTimestampFormat() throws Exception {
+        productService.saveProduct(team5);
+        entityManager.clear();
+        Instant oldTimestamp = team5.getTimestamp();
+        team5.setTimestamp(null);
+        String team5json = json(team5);
+
+        MvcResult result = mockMvc.perform(put("/product/{id}", team5.getId())
+                .content(team5json)
+                .contentType(JSON_MEDIA_TYPE)
+                .accept(JSON_MEDIA_TYPE))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'timestamp')].message", hasItem(messages.get("error.product.timestamp.null"))))
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", team5.getName()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(oldTimestamp))))
+                .andReturn()
+        ;
+    }
 
     private void saveNumerousProducts() {
         productService.saveProduct(team5);
@@ -426,8 +1437,14 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         productService.saveProduct(colam5);
     }
 
+
     private Product createProduct(String name, BigDecimal price, Instant timestamp) {
         return new Product(name, timestamp, price);
+    }
+
+    private long getResourceIdFromUrl(String locationUrl) {
+        String[] parts = locationUrl.split("/");
+        return Long.valueOf(parts[parts.length - 1]);
     }
 
 

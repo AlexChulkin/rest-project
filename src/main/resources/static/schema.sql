@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS product (
   timestamp TIMESTAMP      NOT NULL,
   price     DECIMAL(14, 2) NOT NULL,
   version   INT            NOT NULL DEFAULT 0,
-  UNIQUE uq (name, TIMESTAMP ),
+  UNIQUE (name, TIMESTAMP),
   PRIMARY KEY (id)
 );
 

@@ -3,7 +3,7 @@ package com.example.endpoint;
 import com.example.components.Messages;
 import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.validation.ConstraintViolationException;
-import java.time.format.DateTimeParseException;
+import javax.validation.ValidationException;
+import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -60,16 +61,16 @@ public abstract class AbstractEndpoint {
     @ExceptionHandler
     protected ResponseEntity<Error> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.info(messages.get("abstractEndpoint.HttpMessageNotReadableException.handling", new Object[]{ex.getMessage()}));
-        return ResponseEntity.badRequest().body(new Error(ex.getMessage()));
+        return ResponseEntity.badRequest().body(new Error(messages.get("error.abstractEndpoint.HttpMessageNotReadableException.message")));
     }
 
     /**
      * Database integrity exception handler
      */
-    @ExceptionHandler
-    protected ResponseEntity<Error> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
-        log.info(messages.get("abstractEndpoint.DataIntegrityViolationException.handling", new Object[]{ex.getMessage()}));
-        return ResponseEntity.badRequest().body(new Error(ex.getMessage()));
+    @ExceptionHandler(DataAccessException.class)
+    protected ResponseEntity<Error> handleDataAccessException(DataAccessException ex) {
+        log.info(messages.get("abstractEndpoint.DataAccessException.handling", new Object[]{ex.getMessage()}));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new Error(ex.getMessage()));
     }
 
     /**
@@ -77,7 +78,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Error> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        log.info(messages.get("ResourceNotFoundException.handling", new Object[]{ex.getMessage()}));
+        log.info(messages.get("abstractEndpoint.ResourceNotFoundException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Error(ex.getMessage()));
     }
 
@@ -86,7 +87,7 @@ public abstract class AbstractEndpoint {
      */
     @ExceptionHandler(InconsistentEntityAndIdException.class)
     public ResponseEntity<Error> handleInconsistentEntityAndIdException(InconsistentEntityAndIdException ex) {
-        log.info(messages.get("InconsistentEntityAndIdException.handling", new Object[]{ex.getMessage()}));
+        log.info(messages.get("abstractEndpoint.InconsistentResourceAndIdException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .badRequest()
                 .body(new Error(ex.getMessage()));
@@ -125,18 +126,31 @@ public abstract class AbstractEndpoint {
             return ResponseEntity
                     .badRequest()
                     .body(new Error(messages.get("abstractEndpoint.improper.get.requestmapping")));
+        } else if (ex.getMethod().equals("PUT")) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new Error(messages.get("abstractEndpoint.improper.put.requestmapping")));
         }
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(new Error(ex.getMessage()));
     }
 
-    @ExceptionHandler(DateTimeParseException.class)
-    public ResponseEntity<Error> handleDateTimeParseException(DateTimeParseException ex) {
-        log.info(messages.get("abstractEndpoint.DateTimeParseException.handling", new Object[]{ex.getMessage()}));
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<Error> handleValidationException(ValidationException ex) {
+        log.info(messages.get("abstractEndpoint.ValidationException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new Error(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message")));
+                .body(new Error(messages.get("abstractEndpoint.ValidationException.handling")));
+    }
+
+    @ExceptionHandler(DateTimeException.class)
+    public ResponseEntity<Error> handleDataTimeException(DateTimeException ex) {
+        log.info(messages.get("abstractEndpoint.DateTimeException.handling", new Object[]{ex.getMessage()}));
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new Error(messages.get("error.abstractEndpoint.DateTimeException.message")));
     }
     /**
      * Handler for the case of unexpected errors.
@@ -146,9 +160,8 @@ public abstract class AbstractEndpoint {
         log.info(messages.get("abstractEndpoint.DefaultException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new Error(messages.get("error.abstractEndpoint.dateParsingFailed.message")));
+                .body(new Error(messages.get("error.abstractEndpoint.universalError.message")));
     }
-
 
     private List<Error> convertObjectErrorsToErrors(List<ObjectError> objectErrors) {
 

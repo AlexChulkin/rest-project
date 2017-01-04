@@ -28,8 +28,13 @@ import static com.example.config.ConfigurationConstants.MAX_NAME_LENGTH;
                 query = "SELECT NEW com.example.domain.NameAndPrice(p.name, p.price) " +
                         "FROM Product p WHERE year(p.timestamp) = year(:timestamp) AND " +
                         "month(p.timestamp) = month(:timestamp) AND " +
-                        "day(p.timestamp) = day(:timestamp) AND day(p.timestamp) = day(:timestamp) AND " +
+                        "day(p.timestamp) = day(:timestamp) AND hour(p.timestamp) = hour(:timestamp) AND " +
                         "minute(p.timestamp) = minute(:timestamp) AND second(p.timestamp) = second(:timestamp)"),
+        @NamedQuery(name = "Product.findNumberOfProductsWithGivenNameAndTimestamp",
+                query = "SELECT COUNT(p) FROM Product p WHERE p.name = :name AND " +
+                        "year(p.timestamp) = year(:timestamp) AND month(p.timestamp) = month(:timestamp) AND " +
+                        "day(p.timestamp) = day(:timestamp) AND hour(p.timestamp) = hour(:timestamp) AND " +
+                        "minute(p.timestamp) = minute(:timestamp) AND second(p.timestamp) = second(:timestamp)")
 })
 @Entity
 @Table(name = "product", uniqueConstraints = @UniqueConstraint(columnNames = {"name", "timestamp"}))
@@ -65,7 +70,7 @@ public class Product implements Serializable {
 
     @NotBlank(message = "{error.product.name.blank}")
     @Length(max = MAX_NAME_LENGTH, message = "{error.product.name.length}")
-    @Column
+    @Column(nullable = false)
     public String getName() {
         return name;
     }
@@ -76,6 +81,7 @@ public class Product implements Serializable {
 
     @NotNull(message = "{error.product.timestamp.null}")
     @DateTimeFormat(pattern = DATE_TIME_FORMAT_PATTERN)
+    @Column(nullable = false)
     public Instant getTimestamp() {
         return timestamp;
     }
@@ -84,8 +90,8 @@ public class Product implements Serializable {
         this.timestamp = timestamp;
     }
 
-    @NotNull(message = "{error.product.price.null}")
-    @PriceValid
+    @PriceValid(message = "{error.product.price.invalid}")
+    @Column(nullable = false)
     public BigDecimal getPrice() {
         return price;
     }

@@ -4,7 +4,6 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 import java.lang.annotation.*;
 
-import static com.example.config.ConfigurationConstants.ERROR_PRODUCT_PRICE_INVALID;
 
 /**
  * Created by alexc_000 on 2017-01-02.
@@ -13,9 +12,9 @@ import static com.example.config.ConfigurationConstants.ERROR_PRODUCT_PRICE_INVA
 @Constraint(validatedBy = PriceValidator.class)
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PriceValid {
+@interface PriceValid {
 
-    String message() default ERROR_PRODUCT_PRICE_INVALID;
+    String message() default "";
 
     Class<?>[] groups() default {};
 

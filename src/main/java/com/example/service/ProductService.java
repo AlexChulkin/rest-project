@@ -22,6 +22,8 @@ public interface ProductService {
 
     void deleteProduct(Product product);
 
+    Long findNumberOfProductsWithGivenNameAndTimestamp(String name, Instant timestamp);
+
     void deleteAll();
 }
 
