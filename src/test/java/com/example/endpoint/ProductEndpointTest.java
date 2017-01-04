@@ -47,10 +47,12 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     private static final String TEA = "Tea";
     private static final String CINNAMON = "Cinnamon";
     private static final String ICE_CREAM = "Ice cream";
+    private static final String COLA = "Cola";
     private static final BigDecimal ONE = BigDecimal.ONE.setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal TWO = BigDecimal.valueOf(2).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal FIVE = BigDecimal.valueOf(5).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal TEN = BigDecimal.TEN.setScale(2, BigDecimal.ROUND_HALF_UP);
+
     @Autowired
     EntityManager entityManager;
     @Autowired
@@ -59,21 +61,13 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     private Messages messages;
 
     private Product testProduct;
-    private Product team5, team2, tea0, teap2, teap5, teap7, coffeem5, coffeep5, nutsm5, nutsm2, nuts0, cinnamon0, cinnamonp2;
+    private String testProductName;
+    private String testTimestampString;
 
-    @Before
-    public void setup() throws Exception {
-        super.setup();
-//        entityManager.clear();
-//        entityManager.getEntityManagerFactory().getCache().evictAll();
-        productService.saveProduct(createProduct(ICE_CREAM, ONE, NOW_MINUS_5));
-        testProduct = productService.findProductById(1L);
-        entityManager.refresh(testProduct);
-    }
+    private Product team5, team2, tea0, teap2, teap5, teap7, coffeem5, coffeep5, nutsm5, nutsm2, nuts0,
+            cinnamon0, cinnamonp2, cinnamonm5, colam5;
 
-    @Test
-    @DirtiesContext
-    public void findProductsByNamePositive() throws Exception {
+    {
         team5 = createProduct(TEA, TWO, NOW_MINUS_5);
         team2 = createProduct(TEA, FIVE, NOW_MINUS_2);
         tea0 = createProduct(TEA, TEN, NOW);
@@ -86,26 +80,26 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         nutsm2 = createProduct(NUTS, FIVE, NOW_MINUS_2);
         nuts0 = createProduct(NUTS, TWO, NOW);
         cinnamon0 = createProduct(CINNAMON, TEN, NOW);
+        cinnamonm5 = createProduct(CINNAMON, TEN, NOW_MINUS_5);
         cinnamonp2 = createProduct(CINNAMON, FIVE, NOW_PLUS_2);
+        colam5 = createProduct(COLA, ONE, NOW_MINUS_5);
+    }
 
+    @Before
+    public void setup() throws Exception {
+        super.setup();
+        productService.saveProduct(createProduct(ICE_CREAM, ONE, NOW_MINUS_5));
+        testProduct = productService.findProductById(1L);
+        entityManager.refresh(testProduct);
+        testProductName = testProduct.getName();
+        testTimestampString = DATE_TIME_FORMATTER.format(testProduct.getTimestamp());
+    }
 
-        productService.saveProduct(team5);
-        productService.saveProduct(coffeem5);
-        productService.saveProduct(nutsm5);
-        productService.saveProduct(team2);
-        productService.saveProduct(nutsm2);
-        productService.saveProduct(tea0);
-        productService.saveProduct(cinnamon0);
-        productService.saveProduct(nuts0);
-        productService.saveProduct(cinnamonp2);
-        productService.saveProduct(coffeep5);
-        productService.saveProduct(teap2);
-        productService.saveProduct(teap5);
-        productService.saveProduct(teap7);
-
-        String name = testProduct.getName();
-
-        mockMvc.perform(get("/product/name/{name}", name))
+    @Test
+    @DirtiesContext
+    public void findProductsByNamePositive() throws Exception {
+        saveNumerousProducts();
+        mockMvc.perform(get("/product/name/{name}", testProductName))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -213,7 +207,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Test
     @DirtiesContext
     public void findProductsByNameNegativePageIndex() throws Exception {
-        mockMvc.perform(get("/product/name/{name}?pageIndex=-1", testProduct.getName()))
+        mockMvc.perform(get("/product/name/{name}?pageIndex=-1", testProductName))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -226,7 +220,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Test
     @DirtiesContext
     public void findProductsByNameNotIntegerPageIndex() throws Exception {
-        mockMvc.perform(get("/product/name/{name}?pageIndex=t", testProduct.getName()))
+        mockMvc.perform(get("/product/name/{name}?pageIndex=t", testProductName))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -240,7 +234,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Test
     @DirtiesContext
     public void findProductsByNameNotPositivePageSize() throws Exception {
-        mockMvc.perform(get("/product/name/{name}?pageSize=0", testProduct.getName()))
+        mockMvc.perform(get("/product/name/{name}?pageSize=0", testProductName))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -253,7 +247,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     @Test
     @DirtiesContext
     public void findProductsByNameNotIntegerPageSize() throws Exception {
-        mockMvc.perform(get("/product/name/{name}?pageSize=t", testProduct.getName()))
+        mockMvc.perform(get("/product/name/{name}?pageSize=t", testProductName))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -261,6 +255,175 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.notInteger.message"))))
                 .andReturn()
         ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampPositive() throws Exception {
+        saveNumerousProducts();
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(Integer.valueOf(DEFAULT_PAGE_SIZE))))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andExpect(jsonPath("$[2].price", is(coffeem5.getPrice().toString())))
+                .andExpect(jsonPath("$[2].name", is(coffeem5.getName())))
+                .andExpect(jsonPath("$[3].price", is(nutsm5.getPrice().toString())))
+                .andExpect(jsonPath("$[3].name", is(nutsm5.getName())))
+                .andExpect(jsonPath("$[4].price", is(cinnamonm5.getPrice().toString())))
+                .andExpect(jsonPath("$[4].name", is(cinnamonm5.getName())))
+                .andReturn()
+        ;
+
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageIndex=1", testTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(colam5.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(colam5.getName())))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageSize=2", testTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(testProductName)))
+                .andExpect(jsonPath("$[1].price", is(team5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(team5.getName())))
+                .andReturn()
+        ;
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageSize=2&pageIndex=2", testTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].price", is(cinnamonm5.getPrice().toString())))
+                .andExpect(jsonPath("$[0].name", is(cinnamonm5.getName())))
+                .andExpect(jsonPath("$[1].price", is(colam5.getPrice().toString())))
+                .andExpect(jsonPath("$[1].name", is(colam5.getName())))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampNullTimestamp() throws Exception {
+        mockMvc.perform(get("/product/timestamp/"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_XML))
+                .andExpect(xpath("/").nodeCount(1))
+                .andExpect(xpath("/error/message").string(is(messages.get("abstractEndpoint.improper.get.requestmapping"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampBlankTimestamp() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}", "   "))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampImproperDateTimeFormat() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}", "11-11-1999 12:00:00"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampNegativePageIndex() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageIndex=-1", testProductName))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'findProductsByTimestamp.arg2')].message", hasItem(messages.get("error.productEndpoint.pageIndex.negative"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampNotIntegerPageIndex() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageIndex=t", testProductName))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.notInteger.message"))))
+                .andReturn()
+        ;
+    }
+
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampNotPositivePageSize() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageSize=0", testProductName))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'findProductsByTimestamp.arg1')].message", hasItem(messages.get("error.productEndpoint.pageSize.notPositive"))))
+                .andReturn()
+        ;
+    }
+
+    @Test
+    @DirtiesContext
+    public void findProductsByTimestampNotIntegerPageSize() throws Exception {
+        mockMvc.perform(get("/product/timestamp/{timestamp}?pageSize=t", testProductName))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.message", is(messages.get("error.productEndpoint.notInteger.message"))))
+                .andReturn()
+        ;
+    }
+
+
+    private void saveNumerousProducts() {
+        productService.saveProduct(team5);
+        productService.saveProduct(coffeem5);
+        productService.saveProduct(nutsm5);
+        productService.saveProduct(team2);
+        productService.saveProduct(nutsm2);
+        productService.saveProduct(tea0);
+        productService.saveProduct(cinnamon0);
+        productService.saveProduct(nuts0);
+        productService.saveProduct(cinnamonp2);
+        productService.saveProduct(coffeep5);
+        productService.saveProduct(teap2);
+        productService.saveProduct(teap5);
+        productService.saveProduct(teap7);
+        productService.saveProduct(cinnamonm5);
+        productService.saveProduct(colam5);
     }
 
     private Product createProduct(String name, BigDecimal price, Instant timestamp) {

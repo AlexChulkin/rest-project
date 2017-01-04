@@ -1,13 +1,11 @@
 package com.example.domain;
 
 
-import com.example.config.ConfigurationConstants;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -28,14 +26,15 @@ import static com.example.config.ConfigurationConstants.MAX_NAME_LENGTH;
                         "FROM Product p WHERE p.name = :name"),
         @NamedQuery(name = "Product.findProductsByTimestamp",
                 query = "SELECT NEW com.example.domain.NameAndPrice(p.name, p.price) " +
-                        "FROM Product p WHERE p.timestamp = :timestamp"),
+                        "FROM Product p WHERE year(p.timestamp) = year(:timestamp) AND " +
+                        "month(p.timestamp) = month(:timestamp) AND " +
+                        "day(p.timestamp) = day(:timestamp) AND day(p.timestamp) = day(:timestamp) AND " +
+                        "minute(p.timestamp) = minute(:timestamp) AND second(p.timestamp) = second(:timestamp)"),
 })
 @Entity
 @Table(name = "product", uniqueConstraints = @UniqueConstraint(columnNames = {"name", "timestamp"}))
 public class Product implements Serializable {
     private static final long serialVersionUID = 1L;
-    @Autowired
-    ConfigurationConstants configurationConstants;
     private String name;
 
     @JsonFormat(pattern = DATE_TIME_FORMAT_PATTERN)

@@ -3,7 +3,7 @@ package com.example.repository;
 import com.example.domain.Product;
 import org.springframework.data.repository.CrudRepository;
 
-import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -12,6 +12,6 @@ import java.util.List;
 public interface ProductRepository extends CrudRepository<Product, Long> {
     List<Product> findByName(String name);
 
-    List<Product> findByTimestamp(Instant timestamp);
+    List<Product> findByTimestamp(Date timestamp);
 }
 

@@ -54,7 +54,7 @@ public class RestProjectApplication {
     @Bean
     public ReloadableResourceBundleMessageSource messageSource() {
         ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();
-        source.setBasename("classpath:messages");
+        source.setBasenames("classpath:messages", "classpath:ValidationMessages");
         return source;
     }
 

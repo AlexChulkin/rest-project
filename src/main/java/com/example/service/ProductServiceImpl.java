@@ -14,8 +14,6 @@ import javax.persistence.PersistenceContext;
 import java.time.Instant;
 import java.util.List;
 
-import static com.example.config.ConfigurationConstants.DATE_TIME_FORMATTER;
-
 /**
  * Created by alexc_000 on 2016-12-29.
  */
@@ -40,7 +38,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<NameAndPrice> findProductsByTimestamp(Instant timestamp, Integer pageIndex, Integer pageSize) {
         return em.createNamedQuery("Product.findProductsByTimestamp", NameAndPrice.class)
-                .setParameter("timestamp", DATE_TIME_FORMATTER.format(timestamp))
+                .setParameter("timestamp", timestamp)
                 .setFirstResult(pageIndex * pageSize)
                 .setMaxResults(pageSize)
                 .getResultList();

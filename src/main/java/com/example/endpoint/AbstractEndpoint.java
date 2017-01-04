@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.validation.ConstraintViolationException;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -130,6 +131,13 @@ public abstract class AbstractEndpoint {
                 .body(new Error(ex.getMessage()));
     }
 
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<Error> handleDateTimeParseException(DateTimeParseException ex) {
+        log.info(messages.get("abstractEndpoint.DateTimeParseException.handling", new Object[]{ex.getMessage()}));
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new Error(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message")));
+    }
     /**
      * Handler for the case of unexpected errors.
      */
@@ -138,8 +146,9 @@ public abstract class AbstractEndpoint {
         log.info(messages.get("abstractEndpoint.DefaultException.handling", new Object[]{ex.getMessage()}));
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new Error(ex.getMessage()));
+                .body(new Error(messages.get("error.abstractEndpoint.dateParsingFailed.message")));
     }
+
 
     private List<Error> convertObjectErrorsToErrors(List<ObjectError> objectErrors) {
 

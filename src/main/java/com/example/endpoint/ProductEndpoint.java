@@ -79,7 +79,7 @@ public class ProductEndpoint extends AbstractEndpoint {
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Returns the list of products having the given timestamp"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Request mapping should be like /timestamo/{timestamp}." +
-                    "Timestamp must be of format 'yyyy-MM-dd hh:mm:ss'" +
+                    "Timestamp must be of format 'yyyy-MM-dd HH:mm:ss'" +
                     "Page index should be not-negative integer, page size should be positive integer")
     })
     public ResponseEntity<List<NameAndPrice>> findProductsByTimestamp(
