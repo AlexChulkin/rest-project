@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @Transactional
 @Log4j
-@Sql("classpath:/static/schema.sql")
 public class ProductEndpointTest extends AbstractEndpointTest {
     private static final Instant NOW = Instant.now();
     private static final Instant NOW_PLUS_2 = NOW.plus(2, ChronoUnit.HOURS);
@@ -53,7 +51,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     private static final BigDecimal TWO = BigDecimal.valueOf(2).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal FIVE = BigDecimal.valueOf(5).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal TEN = BigDecimal.TEN.setScale(2, BigDecimal.ROUND_HALF_UP);
-    private static final String RESOURCE_LOCATION_PATTERN = "http://localhost/product/*";
+    private static final String RESOURCE_LOCATION_PATTERN = "http://localhost/product/??";
     @Autowired
     private EntityManager entityManager;
     @Autowired
@@ -420,7 +418,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(redirectedUrlPattern(RESOURCE_LOCATION_PATTERN))
                 .andReturn();
         long id = getResourceIdFromUrl(result.getResponse().getRedirectedUrl());
-        assert id == 2;
+        assert id == 11;
         entityManager.clear();
 
 

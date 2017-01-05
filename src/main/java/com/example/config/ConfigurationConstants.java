@@ -13,7 +13,7 @@ import java.util.Locale;
 public class ConfigurationConstants {
     public static final String DATE_TIME_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final DateTimeFormatter DATE_TIME_FORMATTER;
-    public static final Locale DEFAULT_LOCALE = Locale.getDefault();
+    public static final Locale DEFAULT_LOCALE = Locale.UK;
     public static final ZoneId DEFAULT_ZONE_ID = ZoneId.of("UTC");
     public static final int MAX_NAME_LENGTH = 60;
     public static final String DEFAULT_PAGE_SIZE = "5";
