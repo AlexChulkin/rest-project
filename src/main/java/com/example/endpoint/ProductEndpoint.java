@@ -113,8 +113,8 @@ public class ProductEndpoint extends AbstractEndpoint {
                     " relating the unique key (name, timestamp) and save operation rollbacked or some other error occurred). Please contact your DB administrator if you" +
                     "have any concerns")
     })
-    public ResponseEntity<Product> create(@Valid @RequestBody Product product,
-                                          HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity<?> create(@Valid @RequestBody Product product,
+                                    HttpServletRequest request, HttpServletResponse response) throws Exception {
         checkForDBIntegrityViolationException(product);
         log.info(messages.get("productEndpoint.createProduct.before", new Object[]{product}));
         Product newProduct = productService.saveProduct(product);
@@ -142,41 +142,48 @@ public class ProductEndpoint extends AbstractEndpoint {
                     " relating the unique key (name, timestamp) and save operation rollbacked or some other error occurred). Please contact your DB administrator if you" +
                     "have any concerns")
     })
-    public ResponseEntity<Void> update(@Valid @RequestBody Product product,
-                                       @NotNull(message = "{error.product.id.null}")
+    public ResponseEntity<?> update(@Valid @RequestBody Product product,
+                                    @NotNull(message = "{error.product.id.null}")
                                        @ApiParam(value = "The id of the existing product entity.", required = true)
                                        @Min(value = 1L, message = "{error.product.id.notPositive}")
                                        @PathVariable("id") Long id) {
+        String name = product.getName();
+        Instant timestamp = product.getTimestamp();
         checkIfIdExists(id);
         checkIdAndEntityForConsistency(id, product);
-        checkForDBIntegrityViolationException(product);
         log.info(messages.get("productEndpoint.updateProduct.before", new Object[]{product}));
-        productService.saveProduct(product);
+        int updateResult = productService.updateProduct(product);
         log.info(messages.get("productEndpoint.updateProduct.after", new Object[]{product}));
+        if (updateResult == 0) {
+            throw new DataIntegrityViolationException(messages.get("error.productEndpoint.dBConstraintViolation.message", new Object[]{name, DATE_TIME_FORMATTER.format(timestamp)}));
+        }
         return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE,
+            produces = {"application/json", "application/xml"})
     @ApiOperation(
             value = "Deletes the the product with given id in the database",
-            response = Void.class)
+            response = Void.class
+    )
     @ApiResponses(value = {
             @ApiResponse(code = HttpURLConnection.HTTP_NO_CONTENT, message = "Operation succeeded"),
             @ApiResponse(code = HttpURLConnection.HTTP_NOT_FOUND, message = "Resource(entity) with given id is not found"),
             @ApiResponse(code = HttpURLConnection.HTTP_BAD_REQUEST, message = "Either id is null or not a positive long number")
     })
-    public ResponseEntity<Void> delete(@NotBlank(message = "{error.product.id.blank}")
+    public ResponseEntity<Void> delete(@ApiParam(value = "The id of the existing product resource.", required = true)
                                        @Min(value = 1L, message = "{error.product.id.notPositive}")
-                                       @PathVariable("id") Long id) {
+                                       @PathVariable("id")
+                                               Long id) {
         checkIfIdExists(id);
         log.info(messages.get("productEndpoint.deleteProduct.before", new Object[]{id}));
-        Product product = productService.findProductById(id);
-        productService.deleteProduct(product);
+        productService.delete(id);
         log.info(messages.get("productEndpoint.deleteProduct.after", new Object[]{id}));
         return ResponseEntity.noContent().build();
     }
 
     private void checkIfIdExists(Long id) {
+        System.out.println("check if exists");
         Product idEntity = productService.findProductById(id);
         Optional.ofNullable(idEntity).orElseThrow(()
                 -> new ResourceNotFoundException(messages.get("error.productEndpoint.resourceNotFound.message",
@@ -193,7 +200,7 @@ public class ProductEndpoint extends AbstractEndpoint {
     private void checkForDBIntegrityViolationException(Product savedProduct) {
         String name = savedProduct.getName();
         Instant timestamp = savedProduct.getTimestamp();
-        Long numOfDuplicates = productService.findNumberOfProductsWithGivenNameAndTimestamp(savedProduct.getName(), savedProduct.getTimestamp());
+        Long numOfDuplicates = productService.findNumberOfProductsWithGivenNameAndTimestamp(name, timestamp);
         if (numOfDuplicates > 0) {
             throw new DataIntegrityViolationException(messages.get("error.productEndpoint.dBConstraintViolation.message", new Object[]{name, DATE_TIME_FORMATTER.format(timestamp)}));
         }

@@ -53,7 +53,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
     private static final BigDecimal TWO = BigDecimal.valueOf(2).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal FIVE = BigDecimal.valueOf(5).setScale(2, BigDecimal.ROUND_HALF_UP);
     private static final BigDecimal TEN = BigDecimal.TEN.setScale(2, BigDecimal.ROUND_HALF_UP);
-    private static final String RESOURCE_LOCATION_PATTERN = "http://localhost/product/?";
+    private static final String RESOURCE_LOCATION_PATTERN = "http://localhost/product/*";
     @Autowired
     private EntityManager entityManager;
     @Autowired
@@ -105,7 +105,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(testProduct.getPrice().toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
@@ -336,7 +336,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$.length()", is(3)))
-                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message"))))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.DateTimeException.message"))))
                 .andReturn()
         ;
     }
@@ -349,7 +349,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$.length()", is(3)))
-                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.dateTimeParsingFailed.message"))))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.abstractEndpoint.DateTimeException.message"))))
                 .andReturn()
         ;
     }
@@ -769,6 +769,7 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andDo(print())
                 .andExpect(status().isNoContent())
                 .andReturn();
+
         entityManager.clear();
 
 
@@ -778,11 +779,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(updatedPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -819,11 +820,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -860,11 +861,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -883,7 +884,8 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         BigDecimal updatedPrice = oldPrice.add(TEN);
         testProduct.setPrice(updatedPrice);
         String testProductJson = json(testProduct);
-        Long notExistingId = 2L;
+        Long notExistingId = 10000L;
+        entityManager.clear();
 
         MvcResult result = mockMvc.perform(put("/product/{id}", notExistingId)
                 .content(testProductJson)
@@ -902,11 +904,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -945,11 +947,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -990,11 +992,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -1035,11 +1037,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -1073,11 +1075,11 @@ public class ProductEndpointTest extends AbstractEndpointTest {
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].price", is(oldPrice.toString())))
-                .andExpect(jsonPath("$[0].timestamp", is(DATE_TIME_FORMATTER.format(testProduct.getTimestamp()))))
+                .andExpect(jsonPath("$[0].timestamp", is(testTimestampString)))
                 .andReturn()
         ;
 
-        mockMvc.perform(get("/product/timestamp/{timestamp}", DATE_TIME_FORMATTER.format(testProduct.getTimestamp())))
+        mockMvc.perform(get("/product/timestamp/{timestamp}", testTimestampString))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(JSON_MEDIA_TYPE))
@@ -1419,6 +1421,222 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         ;
     }
 
+
+    @Test
+    @DirtiesContext
+    public void deleteNullId() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+        String oldPriceString = testProduct.getPrice().toString();
+
+        Long nullId = null;
+
+        mockMvc.perform(delete("/product/{id}", nullId))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].timestamp", is(oldTimestampString)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].name", is(oldName)))
+                .andReturn();
+    }
+
+    @Test
+    @DirtiesContext
+    public void deleteNoId() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+        String oldPriceString = testProduct.getPrice().toString();
+
+
+        mockMvc.perform(delete("/product/"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].timestamp", is(oldTimestampString)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].name", is(oldName)))
+                .andReturn();
+    }
+
+    @Test
+    @DirtiesContext
+    public void deleteIdNotFound() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+        String oldPriceString = testProduct.getPrice().toString();
+
+        Long notFoundId = 10000L;
+
+
+        mockMvc.perform(delete("/product/{id}", notFoundId))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].timestamp", is(oldTimestampString)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].name", is(oldName)))
+                .andReturn();
+    }
+
+    @Test
+    @DirtiesContext
+    public void deleteIdNotAPositiveNumber() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+        String oldPriceString = testProduct.getPrice().toString();
+
+        Long notPositiveId = 0L;
+
+
+        mockMvc.perform(delete("/product/{id}", notPositiveId))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(1)))
+                .andExpect(jsonPath("$.[?(@.field == 'delete.arg0')].message", hasItem(messages.get("error.product.id.notPositive"))))
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].timestamp", is(oldTimestampString)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].name", is(oldName)))
+                .andReturn();
+    }
+
+    @Test
+    @DirtiesContext
+    public void deleteIdNotALongNumber() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+        String oldPriceString = testProduct.getPrice().toString();
+
+        String something = "notLongId";
+
+
+        mockMvc.perform(delete("/product/{id}", something))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.length()", is(3)))
+                .andExpect(jsonPath("$.[?(@.field == null)].message", hasItem(messages.get("error.productEndpoint.notLong.message"))))
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].timestamp", is(oldTimestampString)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].price", is(oldPriceString)))
+                .andExpect(jsonPath("$[0].name", is(oldName)))
+                .andReturn();
+    }
+
+    @Test
+    @DirtiesContext
+    public void deletePositive() throws Exception {
+        String oldName = testProductName;
+        String oldTimestampString = testTimestampString;
+
+
+        mockMvc.perform(delete("/product/{id}", testProduct.getId()))
+                .andDo(print())
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        entityManager.clear();
+
+        mockMvc.perform(get("/product/name/{name}", oldName))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn();
+
+        mockMvc.perform(get("/product/timestamp/{timestamp}", oldTimestampString))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(JSON_MEDIA_TYPE))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andReturn();
+    }
+
+
+    private void deleteNegativeNotProperId() {
+
+    }
+
     private void saveNumerousProducts() {
         productService.saveProduct(team5);
         productService.saveProduct(coffeem5);
@@ -1446,6 +1664,4 @@ public class ProductEndpointTest extends AbstractEndpointTest {
         String[] parts = locationUrl.split("/");
         return Long.valueOf(parts[parts.length - 1]);
     }
-
-
 }

@@ -58,7 +58,7 @@ public class RestProjectApplication {
         return source;
     }
 
-    @Bean
+    @Bean(name = "serializingObjectMapper")
     public ObjectMapper serializingObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         JavaTimeModule javaTimeModule = new JavaTimeModule();

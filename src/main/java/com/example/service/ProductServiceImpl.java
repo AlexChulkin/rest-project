@@ -5,6 +5,7 @@ import com.example.domain.Product;
 import com.example.domain.TimestampAndPrice;
 import com.example.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +60,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @Modifying
     public Product saveProduct(Product product) {
         Product result = productRepository.save(product);
         em.flush();
@@ -74,7 +76,24 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    public void delete(Long id) {
+        productRepository.delete(id);
+        em.flush();
+    }
+
+    @Override
+    @Transactional
     public void deleteAll() {
         productRepository.deleteAll();
+    }
+
+    @Override
+    public int updateProduct(Product product) {
+        return em.createNamedQuery("Product.update")
+                .setParameter("timestamp", product.getTimestamp())
+                .setParameter("name", product.getName())
+                .setParameter("price", product.getPrice())
+                .setParameter("id", product.getId())
+                .executeUpdate();
     }
 }

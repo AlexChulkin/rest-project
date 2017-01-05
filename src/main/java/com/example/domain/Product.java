@@ -30,6 +30,15 @@ import static com.example.config.ConfigurationConstants.MAX_NAME_LENGTH;
                         "month(p.timestamp) = month(:timestamp) AND " +
                         "day(p.timestamp) = day(:timestamp) AND hour(p.timestamp) = hour(:timestamp) AND " +
                         "minute(p.timestamp) = minute(:timestamp) AND second(p.timestamp) = second(:timestamp)"),
+        @NamedQuery(name = "Product.update",
+                query = "UPDATE Product p " +
+                        "SET p.timestamp = :timestamp, p.name = :name, p.price = :price, p.version = p.version + 1 " +
+                        "WHERE p.id = :id AND NOT EXISTS (SELECT p1 " +
+                        "FROM Product p1 WHERE year(p1.timestamp) = year(:timestamp) " +
+                        "AND month(p.timestamp) = month(:timestamp) " +
+                        "AND day(p1.timestamp) = day(:timestamp) AND hour(p1.timestamp) = hour(:timestamp) AND " +
+                        "minute(p1.timestamp) = minute(:timestamp) AND second(p1.timestamp) = second(:timestamp) " +
+                        "AND p1.name = :name AND p1.id <> :id)"),
         @NamedQuery(name = "Product.findNumberOfProductsWithGivenNameAndTimestamp",
                 query = "SELECT COUNT(p) FROM Product p WHERE p.name = :name AND " +
                         "year(p.timestamp) = year(:timestamp) AND month(p.timestamp) = month(:timestamp) AND " +

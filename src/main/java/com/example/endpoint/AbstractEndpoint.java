@@ -16,11 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.validation.ConstraintViolationException;
-import javax.validation.ValidationException;
 import java.time.DateTimeException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 //import com.example.endpoint.validation.*;
@@ -94,18 +91,6 @@ public abstract class AbstractEndpoint {
     }
 
     /**
-     * Handler for the case of improper URI argument values.
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Error> handleException(IllegalArgumentException ex) {
-        log.info(messages.get("abstractEndpoint.IllegalArgumentException.handling", new Object[]{ex.getMessage()}));
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new Error(ex.getMessage()));
-    }
-
-
-    /**
      * Handler for the case of improper method argument types.
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -122,28 +107,21 @@ public abstract class AbstractEndpoint {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<Error> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
         log.info(messages.get("abstractEndpoint.HttpRequestMethodNotSupportedException.handling", new Object[]{ex.getMessage()}));
-        if (ex.getMethod().equals("GET")) {
+        Set<String> methods = new HashSet<>();
+        methods.add("PUT");
+        methods.add("GET");
+        methods.add("DELETE");
+        String m = ex.getMethod();
+        if (methods.contains(ex.getMethod())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new Error(messages.get("abstractEndpoint.improper.get.requestmapping")));
-        } else if (ex.getMethod().equals("PUT")) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new Error(messages.get("abstractEndpoint.improper.put.requestmapping")));
+                    .body(new Error(messages.get("abstractEndpoint.improper." + m.toLowerCase() + ".requestmapping")));
         }
         return ResponseEntity
                 .status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(new Error(ex.getMessage()));
     }
 
-
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<Error> handleValidationException(ValidationException ex) {
-        log.info(messages.get("abstractEndpoint.ValidationException.handling", new Object[]{ex.getMessage()}));
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new Error(messages.get("abstractEndpoint.ValidationException.handling")));
-    }
 
     @ExceptionHandler(DateTimeException.class)
     public ResponseEntity<Error> handleDataTimeException(DateTimeException ex) {
